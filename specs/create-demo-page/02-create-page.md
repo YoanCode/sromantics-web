@@ -356,6 +356,150 @@ Implement the following components following the pattern used in `src/features/u
 
 ---
 
+## ⚠️ 常見問題與解決方案
+
+### 1. SelectDropdown 組件 API
+**問題**：使用了 `value` 和 `options` 參數，但編譯失敗
+**解決**：SelectDropdown 的正確 API 是 `defaultValue` 和 `items`
+
+```typescript
+// ❌ 錯誤
+<SelectDropdown
+  value={field.value}
+  onValueChange={field.onChange}
+  options={[...]}
+/>
+
+// ✅ 正確
+<SelectDropdown
+  defaultValue={field.value}
+  onValueChange={field.onChange}
+  items={[...]}
+/>
+```
+
+### 2. 數據表格組件
+**問題**：導入不存在的 `DataTable` 組件
+**解決**：需要使用 `@tanstack/react-table` 的 hooks 和 `@/components/ui/table` 的元素自行構建表格
+
+```typescript
+// ❌ 不存在
+import { DataTable } from '@/components/data-table';
+
+// ✅ 正確的做法
+import { flexRender, useReactTable, ... } from '@tanstack/react-table';
+import { Table, TableHeader, TableRow, TableCell, ... } from '@/components/ui/table';
+
+// 然後手動構建表格結構
+<Table>
+  <TableHeader>...</TableHeader>
+  <TableBody>...</TableBody>
+</Table>
+```
+
+### 3. 表格狀態管理
+**問題**：表格狀態未與 URL 同步
+**解決**：使用 `useTableUrlState` hook 管理表格狀態
+
+```typescript
+import { useTableUrlState, type NavigateFn } from '@/hooks/use-table-url-state';
+
+const {
+  columnFilters,
+  onColumnFiltersChange,
+  pagination,
+  onPaginationChange,
+  ensurePageInRange,
+} = useTableUrlState({
+  search,
+  navigate,
+  pagination: { defaultPage: 1, defaultPageSize: 10 },
+  columnFilters: [],
+});
+```
+
+### 4. 路由搜索 Schema
+**問題**：路由未正確識別
+**解決**：在路由文件中定義搜索 schema
+
+```typescript
+// src/routes/_authenticated/students/index.tsx
+import z from 'zod';
+import { createFileRoute } from '@tanstack/react-router';
+
+const studentsSearchSchema = z.object({
+  page: z.number().optional().catch(1),
+  pageSize: z.number().optional().catch(10),
+  status: z.array(z.enum(['active', 'graduated', 'suspended'])).optional().catch([]),
+});
+
+export const Route = createFileRoute('/_authenticated/students/')({
+  validateSearch: studentsSearchSchema,
+  component: Students,
+});
+```
+
+### 5. 主頁面組件中的路由 API
+**問題**：getRouteApi 類型不匹配
+**解決**：添加 @ts-expect-error 注釋並在調用 navigate 時轉型
+
+```typescript
+// @ts-expect-error - Route will be registered at runtime
+const route = getRouteApi('/_authenticated/students/');
+
+export function Students() {
+  const search = route.useSearch();
+  const navigate = route.useNavigate();
+  
+  return (
+    <StudentsTable 
+      data={students} 
+      search={search as Record<string, unknown>} 
+      navigate={navigate as any} 
+    />
+  );
+}
+```
+
+### 6. 未使用的導入導致編譯錯誤
+**問題**：TypeScript strict 模式下未使用的變量導致編譯失敗
+**解決**：清理所有未使用的導入和變量
+
+```typescript
+// ❌ 移除未使用的導入
+// import { CheckCircle2 } from 'lucide-react'; // 未使用
+// import { toast } from 'sonner'; // 未使用
+// const selectedRows = ...; // 未使用
+
+// ✅ 只保留必要的導入
+```
+
+### 7. 批量操作組件
+**問題**：DataTableBulkActions 組件類型不符合表格
+**解決**：組件應接受通用類型 `Table<TData>` 而非具體的 User 類型
+
+```typescript
+export function DataTableBulkActions<TData>({
+  table,
+}: DataTableBulkActionsProps<TData>) {
+  // ...
+}
+```
+
+---
+
+## 📌 實現要點
+
+1. **參考現有的 users 功能** - 遵循 `src/features/users/` 的結構和模式
+2. **檢查組件 API** - 確認所有導入的組件的實際 props（特別是 SelectDropdown）
+3. **測試編譯** - 頻繁運行 `npx tsc --noEmit` 捕捉類型錯誤
+4. **URL 狀態同步** - 使用 `useTableUrlState` 確保表格狀態與 URL 同步
+5. **路由配置完整** - 必須在路由文件中定義 Zod schema 並驗證搜索參數
+6. **清理導入** - 刪除所有未使用的變量以通過 TypeScript strict 檢查
+7. **生成路由** - 修改路由文件後，vite/tsc 會自動重新生成 routeTree.gen.ts
+
+---
+
 ## ✅ Acceptance Criteria
 
 - [x] All TypeScript files compile without errors
