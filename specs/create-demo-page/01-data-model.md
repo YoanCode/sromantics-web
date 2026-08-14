@@ -23,7 +23,7 @@ export const parentSchema = z.object({
   phone: z.string().regex(/^09\d{8}$/, '請輸入正確的台灣手機號碼 (09xxxxxxxx)'),
   email: z.string().email('Email 格式不正確').optional().or(z.literal('')),
   relationship: z.enum(['father', 'mother', 'guardian'], {
-    required_error: '請選擇關係',
+    message: '請選擇關係',
   }),
 });
 export type Parent = z.infer<typeof parentSchema>;
@@ -31,7 +31,7 @@ export type Parent = z.infer<typeof parentSchema>;
 // 2. Student Schema & Type
 export const studentSchema = z.object({
   id: z.string(),
-  parentId: z.string({ required_error: '請選擇關聯家長' }),
+  parentId: z.string().min(1, '請選擇關聯家長'),
   name: z.string().min(2, '學生姓名至少需 2 個字'),
   gender: z.enum(['male', 'female']),
   schoolName: z.string().min(1, '請輸入學校名稱'),
@@ -76,12 +76,10 @@ export const enrollmentSchema = z.object({
 });
 export type Enrollment = z.infer<typeof enrollmentSchema>;
 ```
-
-# Step 2: Create src/data/mock.ts
-
-## 🎯 Goal
+# 🛠️ Step 2: Create src/data/mock.ts
 Create structured relational mock data referencing the types from src/types/mds.ts.
-```typescript
+
+```TypeScript
 import type { Parent, Student, Course, Class, Enrollment } from '@/types/mds';
 
 export const mockParents: Parent[] = [
@@ -177,8 +175,7 @@ export const mockEnrollments: Enrollment[] = [
   },
 ];
 ```
-
 # ✅ Acceptance Criteria
-- Both files must be generated without syntax or type errors.
+Both files must be generated without syntax or type errors.
 
-- Run npm run build or npx tsc to verify TypeScript type-checking passes.
+Run npm run build or npx tsc to verify TypeScript type-checking passes.
