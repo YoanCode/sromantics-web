@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { Student } from '@/types/mds'
 import { AlertTriangle } from 'lucide-react'
-import { showSubmittedData } from '@/lib/show-submitted-data'
+import { useStudents } from './students-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -20,12 +20,12 @@ export function StudentsDeleteDialog({
   currentRow,
 }: StudentDeleteDialogProps) {
   const [value, setValue] = useState('')
+  const { onDelete } = useStudents()
 
   const handleDelete = () => {
     if (value.trim() !== currentRow.name) return
-
+    onDelete(currentRow.id)
     onOpenChange(false)
-    showSubmittedData(currentRow, 'The following student has been deleted:')
   }
 
   return (

@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { Student } from '@/types/mds'
-import { showSubmittedData } from '@/lib/show-submitted-data'
+import { useStudents } from './students-provider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -51,6 +51,7 @@ export function StudentsActionDialog({
   onOpenChange,
 }: StudentActionDialogProps) {
   const isEdit = !!currentRow
+  const { onCreate, onUpdate } = useStudents()
   const form = useForm<StudentForm>({
     resolver: zodResolver(formSchema),
     defaultValues: isEdit
@@ -69,16 +70,16 @@ export function StudentsActionDialog({
 
   const onSubmit = useCallback(
     (values: StudentForm) => {
-      // Generate ID for new student if not present
-      const dataToSubmit = {
-        ...values,
-        id: values.id || `s_${Math.random().toString(36).substr(2, 9)}`,
+      if (isEdit) {
+        onUpdate(currentRow!.id, values as Student)
+      } else {
+        const { id: _id, ...payload } = values
+        onCreate(payload)
       }
       form.reset()
-      showSubmittedData(dataToSubmit)
       onOpenChange(false)
     },
-    [form, onOpenChange]
+    [form, isEdit, currentRow, onCreate, onUpdate, onOpenChange]
   )
 
   return (
@@ -101,6 +102,19 @@ export function StudentsActionDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+            <FormField
+              control={form.control}
+              name='parentId'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Parent ID</FormLabel>
+                  <FormControl>
+                    <Input placeholder='Enter parent ID' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name='name'
@@ -190,7 +204,7 @@ export function StudentsActionDialog({
                 <FormItem>
                   <FormLabel>Note (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder='Enter note' {...field} />
+                    <Input placeholder='Enter note' {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

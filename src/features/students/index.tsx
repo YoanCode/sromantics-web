@@ -9,13 +9,14 @@ import { StudentsDialogs } from './components/students-dialogs'
 import { StudentsPrimaryButtons } from './components/students-primary-buttons'
 import { StudentsProvider } from './components/students-provider'
 import { StudentsTable } from './components/students-table'
-import { students } from './data/students'
+import { useStudentsQuery } from './queries'
 
 const route = getRouteApi('/_authenticated/students/')
 
 export function Students() {
   const search = route.useSearch()
   const navigate = route.useNavigate()
+  const { data: students = [], isLoading } = useStudentsQuery()
 
   return (
     <StudentsProvider>
@@ -36,11 +37,15 @@ export function Students() {
           </div>
           <StudentsPrimaryButtons />
         </div>
-        <StudentsTable
-          data={students}
-          search={search as Record<string, unknown>}
-          navigate={navigate}
-        />
+        {isLoading ? (
+          <p className='text-muted-foreground'>Loading...</p>
+        ) : (
+          <StudentsTable
+            data={students}
+            search={search as Record<string, unknown>}
+            navigate={navigate}
+          />
+        )}
       </Main>
 
       <StudentsDialogs />

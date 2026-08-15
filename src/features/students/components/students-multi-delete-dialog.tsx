@@ -4,10 +4,11 @@ import { useState } from 'react'
 import { type Table } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
-import { sleep } from '@/lib/utils'
+import type { Student } from '@/types/mds'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { useStudents } from './students-provider'
 
 type StudentMultiDeleteDialogProps<TData> = {
   open: boolean
@@ -23,26 +24,20 @@ export function StudentsMultiDeleteDialog<TData>({
   table,
 }: StudentMultiDeleteDialogProps<TData>) {
   const [value, setValue] = useState('')
+  const { onDeleteAsync } = useStudents()
 
   const selectedRows = table.getFilteredSelectedRowModel().rows
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (value.trim() !== CONFIRM_WORD) {
       toast.error(`Please type "${CONFIRM_WORD}" to confirm.`)
       return
     }
-
+    const ids = selectedRows.map((r) => (r.original as Student).id)
+    await Promise.all(ids.map((id) => onDeleteAsync(id)))
+    setValue('')
+    table.resetRowSelection()
     onOpenChange(false)
-
-    toast.promise(sleep(2000), {
-      loading: 'Deleting students...',
-      success: () => {
-        setValue('')
-        table.resetRowSelection()
-        return `Deleted ${selectedRows.length} ${selectedRows.length > 1 ? 'students' : 'student'}`
-      },
-      error: 'Error deleting students',
-    })
   }
 
   return (
