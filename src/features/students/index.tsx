@@ -11,7 +11,6 @@ import { StudentsProvider } from './components/students-provider'
 import { StudentsTable } from './components/students-table'
 import { students } from './data/students'
 
-// @ts-expect-error - Route will be registered at runtime
 const route = getRouteApi('/_authenticated/students/')
 
 export function Students() {
@@ -40,7 +39,7 @@ export function Students() {
         <StudentsTable
           data={students}
           search={search as Record<string, unknown>}
-          navigate={navigate as any}
+          navigate={navigate}
         />
       </Main>
 

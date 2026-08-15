@@ -12,7 +12,6 @@ const studentsSearchSchema = z.object({
   schoolName: z.string().optional().catch(''),
 })
 
-// @ts-expect-error - Route registration at runtime
 export const Route = createFileRoute('/_authenticated/students/')({
   validateSearch: studentsSearchSchema,
   component: Students,

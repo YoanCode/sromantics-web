@@ -1,5 +1,6 @@
 'use client'
 
+import { useCallback } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -55,7 +56,7 @@ export function StudentsActionDialog({
     defaultValues: isEdit
       ? currentRow
       : {
-          id: `s_${Date.now()}`,
+          id: '', // Will be generated on server or in provider
           parentId: '',
           name: '',
           gender: 'male',
@@ -66,11 +67,19 @@ export function StudentsActionDialog({
         },
   })
 
-  const onSubmit = (values: StudentForm) => {
-    form.reset()
-    showSubmittedData(values)
-    onOpenChange(false)
-  }
+  const onSubmit = useCallback(
+    (values: StudentForm) => {
+      // Generate ID for new student if not present
+      const dataToSubmit = {
+        ...values,
+        id: values.id || `s_${Math.random().toString(36).substr(2, 9)}`,
+      }
+      form.reset()
+      showSubmittedData(dataToSubmit)
+      onOpenChange(false)
+    },
+    [form, onOpenChange]
+  )
 
   return (
     <Dialog
