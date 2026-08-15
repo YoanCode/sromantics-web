@@ -311,3 +311,35 @@ This bug was masked in the original mock-data implementation since `showSubmitte
 ```
 
 > **Future improvement**: Replace the free-text `parentId` input with a `<SelectDropdown>` once a `GET /api/parents` endpoint is available.
+
+### Dialog tests fail with `useStudents has to be used within <StudentsContext>`
+
+**Root cause**: After wiring dialogs to `useStudents()`, existing tests that render dialogs in isolation no longer have a `StudentsProvider` ancestor, causing the context guard to throw.
+
+The original tests also mocked `@/lib/show-submitted-data` which is now removed from the dialog source files — leaving a stale, unused mock.
+
+**Fix**: Add `vi.mock('./students-provider', ...)` to each dialog test file, and remove the obsolete `show-submitted-data` mock:
+
+```typescript
+// students-action-dialog.test.tsx & students-delete-dialog.test.tsx
+vi.mock('./students-provider', () => ({
+  useStudents: () => ({
+    onCreate: vi.fn(),
+    onUpdate: vi.fn(),
+    onDelete: vi.fn(),
+    onDeleteAsync: vi.fn(),
+    open: null,
+    setOpen: vi.fn(),
+    currentRow: null,
+    setCurrentRow: vi.fn(),
+  }),
+}))
+
+// students-multi-delete-dialog.test.tsx
+vi.mock('./students-provider', () => ({
+  useStudents: () => ({
+    onDeleteAsync: vi.fn().mockResolvedValue(undefined),
+    // ... other fields
+  }),
+}))
+```

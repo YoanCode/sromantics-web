@@ -4,6 +4,19 @@ import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
 import { StudentsActionDialog } from './students-action-dialog'
 
+vi.mock('./students-provider', () => ({
+  useStudents: () => ({
+    onCreate: vi.fn(),
+    onUpdate: vi.fn(),
+    onDelete: vi.fn(),
+    onDeleteAsync: vi.fn(),
+    open: null,
+    setOpen: vi.fn(),
+    currentRow: null,
+    setCurrentRow: vi.fn(),
+  }),
+}))
+
 const MOCK_STUDENT: Student = {
   id: 's_001',
   parentId: 'p_001',
@@ -14,8 +27,6 @@ const MOCK_STUDENT: Student = {
   note: '對海鮮過敏，下課需要家長接送',
   status: 'active',
 }
-
-vi.mock('@/lib/show-submitted-data', () => ({ showSubmittedData: vi.fn() }))
 
 describe('StudentsActionDialog', () => {
   beforeEach(() => vi.clearAllMocks())

@@ -3,6 +3,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { StudentsDeleteDialog } from './students-delete-dialog'
 
+vi.mock('./students-provider', () => ({
+  useStudents: () => ({
+    onDelete: vi.fn(),
+    onDeleteAsync: vi.fn(),
+    open: null,
+    setOpen: vi.fn(),
+    currentRow: null,
+    setCurrentRow: vi.fn(),
+  }),
+}))
+
 const MOCK_STUDENT: Student = {
   id: 's_001',
   parentId: 'p_001',
@@ -13,8 +24,6 @@ const MOCK_STUDENT: Student = {
   note: '',
   status: 'active',
 }
-
-vi.mock('@/lib/show-submitted-data', () => ({ showSubmittedData: vi.fn() }))
 
 describe('StudentsDeleteDialog', () => {
   beforeEach(() => vi.clearAllMocks())

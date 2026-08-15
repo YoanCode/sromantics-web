@@ -4,6 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { StudentsMultiDeleteDialog } from './students-multi-delete-dialog'
 
+vi.mock('./students-provider', () => ({
+  useStudents: () => ({
+    onDeleteAsync: vi.fn().mockResolvedValue(undefined),
+    open: null,
+    setOpen: vi.fn(),
+    currentRow: null,
+    setCurrentRow: vi.fn(),
+  }),
+}))
+
 vi.mock('sonner', () => ({
   toast: { promise: vi.fn(), error: vi.fn() },
 }))
