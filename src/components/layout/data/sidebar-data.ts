@@ -22,6 +22,7 @@ import {
   Command,
   GalleryVerticalEnd,
   GraduationCap,
+  UserRound,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -83,6 +84,11 @@ export const sidebarData: SidebarData = {
           title: 'Students',
           url: '/students',
           icon: GraduationCap,
+        },
+        {
+          title: 'Parents',
+          url: '/parents',
+          icon: UserRound,
         },
         {
           title: 'Secured by Clerk',
