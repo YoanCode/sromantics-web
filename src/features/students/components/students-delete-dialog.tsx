@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import type { Student } from '@/types/mds'
 import { AlertTriangle } from 'lucide-react'
-import { useStudents } from './students-provider'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { useStudents } from './students-provider'
 
 type StudentDeleteDialogProps = {
   open: boolean

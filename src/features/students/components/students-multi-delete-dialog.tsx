@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { type Table } from '@tanstack/react-table'
+import type { Student } from '@/types/mds'
 import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
-import type { Student } from '@/types/mds'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { ConfirmDialog } from '@/components/confirm-dialog'

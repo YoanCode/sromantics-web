@@ -5,7 +5,6 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { Student } from '@/types/mds'
-import { useStudents } from './students-provider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -25,6 +24,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { SelectDropdown } from '@/components/select-dropdown'
+import { useStudents } from './students-provider'
 
 const formSchema = z.object({
   id: z.string(),
@@ -204,7 +204,11 @@ export function StudentsActionDialog({
                 <FormItem>
                   <FormLabel>Note (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder='Enter note' {...field} value={field.value ?? ''} />
+                    <Input
+                      placeholder='Enter note'
+                      {...field}
+                      value={field.value ?? ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

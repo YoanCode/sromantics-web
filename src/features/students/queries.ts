@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import type { Student } from '@/types/mds'
+import { toast } from 'sonner'
 import { studentsApi } from './api'
 
 export const STUDENTS_KEY = ['students'] as const
