@@ -23,6 +23,25 @@ The change is ready to commit only when:
 
 When the editor still shows diagnostics after the commands pass, restart the TypeScript language service before changing source code.
 
+## Formatting and CI
+
+The repository uses Prettier for formatting. GitHub Actions runs the equivalent of:
+
+```bash
+npm run format:check
+```
+
+Before pushing, format changed files with:
+
+```bash
+npm exec prettier -- --write path/to/changed-file.ts path/to/another-file.ts
+npm exec prettier -- --check path/to/changed-file.ts path/to/another-file.ts
+```
+
+If `pnpm` is not installed in the local environment, use `npm exec prettier` as the equivalent command. Do not manually adjust whitespace when Prettier can make the change consistently.
+
+When CI reports a formatting warning, check the exact file list in the CI log. A full-repository `prettier --check .` may expose pre-existing formatting issues outside the current change, so separate those baseline issues from files modified by the current commit. The files touched by the commit must always pass a targeted Prettier check.
+
 ## ESLint Rules
 
 ### Remove unused imports and variables

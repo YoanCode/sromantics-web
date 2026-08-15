@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
 // 1. Parent Schema & Type
 export const parentSchema = z.object({
@@ -9,8 +9,8 @@ export const parentSchema = z.object({
   relationship: z.enum(['father', 'mother', 'guardian'], {
     message: '請選擇關係',
   }),
-});
-export type Parent = z.infer<typeof parentSchema>;
+})
+export type Parent = z.infer<typeof parentSchema>
 
 // 2. Student Schema & Type
 export const studentSchema = z.object({
@@ -22,8 +22,8 @@ export const studentSchema = z.object({
   grade: z.string().min(1, '請選擇年級'),
   note: z.string().optional(),
   status: z.enum(['active', 'graduated', 'suspended']).default('active'),
-});
-export type Student = z.infer<typeof studentSchema>;
+})
+export type Student = z.infer<typeof studentSchema>
 
 // 3. Course Schema & Type
 export const courseSchema = z.object({
@@ -31,8 +31,8 @@ export const courseSchema = z.object({
   name: z.string().min(2, '課程名稱至少需 2 個字'),
   category: z.enum(['math', 'english', 'science', 'other']),
   description: z.string().optional(),
-});
-export type Course = z.infer<typeof courseSchema>;
+})
+export type Course = z.infer<typeof courseSchema>
 
 // 4. Class Schema & Type
 export const classSchema = z.object({
@@ -46,8 +46,8 @@ export const classSchema = z.object({
   endTime: z.string(),
   maxCapacity: z.number().min(1, '人數至少需 1 人'),
   pricePerPeriod: z.number().min(0, '價格不可為負數'),
-});
-export type Class = z.infer<typeof classSchema>;
+})
+export type Class = z.infer<typeof classSchema>
 
 // 5. Enrollment Schema & Type
 export const enrollmentSchema = z.object({
@@ -57,5 +57,5 @@ export const enrollmentSchema = z.object({
   enrolledAt: z.string(),
   paymentStatus: z.enum(['paid', 'unpaid', 'partial']),
   remainingLessons: z.number().min(0),
-});
-export type Enrollment = z.infer<typeof enrollmentSchema>;
+})
+export type Enrollment = z.infer<typeof enrollmentSchema>

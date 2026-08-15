@@ -1,4 +1,4 @@
-import type { Parent, Student, Course, Class, Enrollment } from '@/types/mds';
+import type { Parent, Student, Course, Class, Enrollment } from '@/types/mds'
 
 export const mockParents: Parent[] = [
   {
@@ -8,7 +8,7 @@ export const mockParents: Parent[] = [
     email: 'daming.wang@example.com',
     relationship: 'father',
   },
-];
+]
 
 export const mockStudents: Student[] = [
   {
@@ -30,7 +30,7 @@ export const mockStudents: Student[] = [
     grade: '小六',
     status: 'active',
   },
-];
+]
 
 export const mockCourses: Course[] = [
   {
@@ -45,7 +45,7 @@ export const mockCourses: Course[] = [
     category: 'english',
     description: '外師全美語互動教學',
   },
-];
+]
 
 export const mockClasses: Class[] = [
   {
@@ -72,7 +72,7 @@ export const mockClasses: Class[] = [
     maxCapacity: 15,
     pricePerPeriod: 800,
   },
-];
+]
 
 export const mockEnrollments: Enrollment[] = [
   {
@@ -91,4 +91,4 @@ export const mockEnrollments: Enrollment[] = [
     paymentStatus: 'partial',
     remainingLessons: 10,
   },
-];
+]
