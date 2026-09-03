@@ -18,12 +18,20 @@ interface AuthState {
     setAccessToken: (accessToken: string) => void
     resetAccessToken: () => void
     reset: () => void
+    isAuthenticated: () => boolean
   }
 }
 
-export const useAuthStore = create<AuthState>()((set) => {
-  const cookieState = getCookie(ACCESS_TOKEN)
-  const initToken = cookieState ? JSON.parse(cookieState) : ''
+export const useAuthStore = create<AuthState>()((set, get) => {
+  let initToken = ''
+  try {
+    const cookieState = getCookie(ACCESS_TOKEN)
+    initToken = cookieState ? JSON.parse(cookieState) : ''
+  } catch (error) {
+    console.error('Failed to parse auth token from cookie:', error)
+    initToken = ''
+  }
+  
   return {
     auth: {
       user: null,
@@ -48,6 +56,14 @@ export const useAuthStore = create<AuthState>()((set) => {
             auth: { ...state.auth, user: null, accessToken: '' },
           }
         }),
+      isAuthenticated: () => {
+        const { auth } = get()
+        return !!(
+          auth.user &&
+          auth.accessToken &&
+          auth.user.exp > Date.now()
+        )
+      },
     },
   }
 })

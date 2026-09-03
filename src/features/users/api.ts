@@ -1,5 +1,6 @@
 import apiClient from '@/lib/api-client'
 import type {
+  AdminResetPasswordInput,
   ChangePasswordInput,
   CreateUserInput,
   UpdateUserInput,
@@ -18,7 +19,21 @@ export const usersApi = {
     id: string,
     payload: ChangePasswordInput
   ): Promise<void> => {
-    await apiClient.put(`${BASE}/${id}/password`, { password: payload.password })
+    await apiClient.put(`${BASE}/${id}/password`, {
+      currentPassword: payload.currentPassword,
+      password: payload.password,
+    })
+  },
+  adminResetPassword: async (
+    id: string,
+    payload: AdminResetPasswordInput
+  ): Promise<void> => {
+    await apiClient.post(`${BASE}/admin/${id}/password/reset`, {
+      newPassword: payload.newPassword,
+    })
+  },
+  unlockUser: async (id: string): Promise<void> => {
+    await apiClient.post(`${BASE}/admin/${id}/unlock`)
   },
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`${BASE}/${id}`)

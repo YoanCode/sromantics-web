@@ -1,19 +1,22 @@
 import React, { useState } from 'react'
 import useDialogState from '@/hooks/use-dialog-state'
 import type {
+  AdminResetPasswordInput,
   ChangePasswordInput,
   CreateUserInput,
   UpdateUserInput,
   User,
 } from '@/types/user'
 import {
+  useAdminResetPasswordMutation,
   useChangePasswordMutation,
   useCreateUserMutation,
   useDeleteUserMutation,
+  useUnlockUserMutation,
   useUpdateUserMutation,
 } from '../queries'
 
-type UsersDialogType = 'add' | 'edit' | 'change-password' | 'delete'
+type UsersDialogType = 'add' | 'edit' | 'change-password' | 'admin-reset-password' | 'delete'
 
 type UsersContextType = {
   open: UsersDialogType | null
@@ -23,6 +26,8 @@ type UsersContextType = {
   onCreate: (data: CreateUserInput) => void
   onUpdate: (id: string, data: UpdateUserInput) => void
   onChangePassword: (id: string, data: ChangePasswordInput) => void
+  onAdminResetPassword: (id: string, data: AdminResetPasswordInput) => void
+  onUnlockUser: (id: string) => void
   onDelete: (id: string) => void
   onDeleteAsync: (id: string) => Promise<unknown>
 }
@@ -35,6 +40,8 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
   const createMutation = useCreateUserMutation()
   const updateMutation = useUpdateUserMutation()
   const changePasswordMutation = useChangePasswordMutation()
+  const adminResetPasswordMutation = useAdminResetPasswordMutation()
+  const unlockUserMutation = useUnlockUserMutation()
   const deleteMutation = useDeleteUserMutation()
 
   return (
@@ -48,6 +55,9 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
         onUpdate: (id, data) => updateMutation.mutate({ id, data }),
         onChangePassword: (id, data) =>
           changePasswordMutation.mutate({ id, data }),
+        onAdminResetPassword: (id, data) =>
+          adminResetPasswordMutation.mutate({ id, data }),
+        onUnlockUser: (id) => unlockUserMutation.mutate(id),
         onDelete: (id) => deleteMutation.mutate(id),
         onDeleteAsync: (id) => deleteMutation.mutateAsync(id),
       }}

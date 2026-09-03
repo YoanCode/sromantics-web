@@ -1,4 +1,5 @@
 import { UsersActionDialog } from './users-action-dialog'
+import { UsersAdminResetPasswordDialog } from './users-admin-reset-password-dialog'
 import { UsersChangePasswordDialog } from './users-change-password-dialog'
 import { UsersDeleteDialog } from './users-delete-dialog'
 import { useUsers } from './users-provider'
@@ -44,6 +45,18 @@ export function UsersDialogs() {
             open={open === 'change-password'}
             onOpenChange={() => {
               setOpen('change-password')
+              setTimeout(() => {
+                setCurrentRow(null)
+              }, 500)
+            }}
+            currentRow={currentRow}
+          />
+
+          <UsersAdminResetPasswordDialog
+            key={`user-admin-reset-password-${currentRow.id}`}
+            open={open === 'admin-reset-password'}
+            onOpenChange={() => {
+              setOpen('admin-reset-password')
               setTimeout(() => {
                 setCurrentRow(null)
               }, 500)

@@ -36,11 +36,44 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>
 
 export const changePasswordSchema = z
   .object({
-    password: z.string().min(8, '密碼至少需 8 個字元').max(72),
+    currentPassword: z.string().min(8, '當前密碼至少需 8 個字元'),
+    password: z.string().min(8, '新密碼至少需 8 個字元').max(72),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: '密碼不一致',
+    message: '新密碼不一致',
     path: ['confirmPassword'],
   })
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
+
+export const adminResetPasswordSchema = z
+  .object({
+    newPassword: z.string().min(8, '密碼長度需至少 8 個字元').max(72),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: '密碼不一致',
+    path: ['confirmPassword'],
+  })
+export type AdminResetPasswordInput = z.infer<typeof adminResetPasswordSchema>
+
+/**
+ * 密碼強度指示器
+ * 需要：8-72 字符，大寫字母、小寫字母、數字或特殊字符
+ */
+export function getPasswordStrength(password: string) {
+  if (!password) return { level: 'empty', color: 'gray' }
+  
+  const checks = [
+    password.length >= 8 && password.length <= 72,
+    /[A-Z]/.test(password),
+    /[a-z]/.test(password),
+    /[0-9!@#$%^&*]/.test(password),
+  ]
+  
+  const passed = checks.filter(Boolean).length
+  
+  if (passed <= 2) return { level: 'weak', color: 'red' }
+  if (passed <= 3) return { level: 'fair', color: 'yellow' }
+  return { level: 'good', color: 'green' }
+}

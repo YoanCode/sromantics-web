@@ -73,4 +73,43 @@ describe('useAuthStore', () => {
     expect(useAuthStoreAfterReload.getState().auth.user).toBeNull()
     expect(useAuthStoreAfterReload.getState().auth.accessToken).toBe('')
   })
+
+  describe('isAuthenticated', () => {
+    it('should return false when user is null', async () => {
+      const useAuthStore = await importAuthStore()
+      expect(useAuthStore.getState().auth.isAuthenticated()).toBe(false)
+    })
+
+    it('should return false when accessToken is empty', async () => {
+      const useAuthStore = await importAuthStore()
+      useAuthStore.getState().auth.setUser({
+        ...sampleUser,
+        exp: Date.now() + 24 * 60 * 60 * 1000,
+      })
+
+      expect(useAuthStore.getState().auth.isAuthenticated()).toBe(false)
+    })
+
+    it('should return false when token is expired', async () => {
+      const useAuthStore = await importAuthStore()
+      useAuthStore.getState().auth.setUser({
+        ...sampleUser,
+        exp: Date.now() - 1000, // 已過期
+      })
+      useAuthStore.getState().auth.setAccessToken('mock-token')
+
+      expect(useAuthStore.getState().auth.isAuthenticated()).toBe(false)
+    })
+
+    it('should return true when user, token are valid and not expired', async () => {
+      const useAuthStore = await importAuthStore()
+      useAuthStore.getState().auth.setUser({
+        ...sampleUser,
+        exp: Date.now() + 24 * 60 * 60 * 1000,
+      })
+      useAuthStore.getState().auth.setAccessToken('mock-token')
+
+      expect(useAuthStore.getState().auth.isAuthenticated()).toBe(true)
+    })
+  })
 })

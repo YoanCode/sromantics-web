@@ -1,6 +1,6 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
-import { KeyRound, Trash2, UserPen } from 'lucide-react'
+import { KeyRound, Lock, Trash2, UserPen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -54,6 +54,30 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
               <KeyRound size={16} />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              setCurrentRow(row.original)
+              setOpen('admin-reset-password')
+            }}
+          >
+            Reset password
+            <DropdownMenuShortcut>
+              <KeyRound size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+          {!row.original.accountNonLocked && (
+            <DropdownMenuItem
+              onClick={() => {
+                setCurrentRow(row.original)
+                useUsers().onUnlockUser(row.original.id)
+              }}
+            >
+              Unlock account
+              <DropdownMenuShortcut>
+                <Lock size={16} />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => {

@@ -26,5 +26,14 @@ export const Route = createRootRouteWithContext<{
     )
   },
   notFoundComponent: NotFoundError,
-  errorComponent: GeneralError,
+  errorComponent: ({ error }) => {
+    // 如果是字符串類型的 'redirect' 錯誤，說明是重定向
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (typeof errorMessage === 'string' && errorMessage.includes('redirect')) {
+      return null
+    }
+
+    console.error('Root error:', error)
+    return <GeneralError />
+  },
 })
