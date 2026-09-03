@@ -1,35 +1,19 @@
-import { Shield, UserCheck, Users, CreditCard } from 'lucide-react'
-import { type UserStatus } from './schema'
-
-export const callTypes = new Map<UserStatus, string>([
-  ['active', 'bg-teal-100/30 text-teal-900 dark:text-teal-200 border-teal-200'],
-  ['inactive', 'bg-neutral-300/40 border-neutral-300'],
-  ['invited', 'bg-sky-200/40 text-sky-900 dark:text-sky-100 border-sky-300'],
-  [
-    'suspended',
-    'bg-destructive/10 dark:bg-destructive/50 text-destructive dark:text-primary border-destructive/10',
-  ],
-])
+import { BriefcaseBusiness, Shield, UserRound } from 'lucide-react'
 
 export const roles = [
   {
-    label: 'Superadmin',
-    value: 'superadmin',
+    label: '系統管理員',
+    value: 'ADMIN',
     icon: Shield,
   },
   {
-    label: 'Admin',
-    value: 'admin',
-    icon: UserCheck,
+    label: '行政人員',
+    value: 'STAFF',
+    icon: BriefcaseBusiness,
   },
   {
-    label: 'Manager',
-    value: 'manager',
-    icon: Users,
-  },
-  {
-    label: 'Cashier',
-    value: 'cashier',
-    icon: CreditCard,
+    label: '教師',
+    value: 'TEACHER',
+    icon: UserRound,
   },
 ] as const

@@ -1,326 +1,77 @@
 'use client'
 
+import { useCallback } from 'react'
 import { z } from 'zod'
-import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { showSubmittedData } from '@/lib/show-submitted-data'
+import { useForm } from 'react-hook-form'
+import type { User, UserRole } from '@/types/user'
+import { userRoleSchema } from '@/types/user'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
-import { SelectDropdown } from '@/components/select-dropdown'
 import { roles } from '../data/data'
-import { type User } from '../data/schema'
+import { useUsers } from './users-provider'
 
-const formSchema = z
-  .object({
-    firstName: z.string().min(1, 'First Name is required.'),
-    lastName: z.string().min(1, 'Last Name is required.'),
-    username: z.string().min(1, 'Username is required.'),
-    phoneNumber: z.string().min(1, 'Phone number is required.'),
-    email: z.email({
-      error: (iss) => (iss.input === '' ? 'Email is required.' : undefined),
-    }),
-    password: z.string().transform((pwd) => pwd.trim()),
-    role: z.string().min(1, 'Role is required.'),
-    confirmPassword: z.string().transform((pwd) => pwd.trim()),
-    isEdit: z.boolean(),
-  })
-  .refine(
-    (data) => {
-      if (data.isEdit && !data.password) return true
-      return data.password.length > 0
-    },
-    {
-      message: 'Password is required.',
-      path: ['password'],
-    }
-  )
-  .refine(
-    ({ isEdit, password }) => {
-      if (isEdit && !password) return true
-      return password.length >= 8
-    },
-    {
-      message: 'Password must be at least 8 characters long.',
-      path: ['password'],
-    }
-  )
-  .refine(
-    ({ isEdit, password }) => {
-      if (isEdit && !password) return true
-      return /[a-z]/.test(password)
-    },
-    {
-      message: 'Password must contain at least one lowercase letter.',
-      path: ['password'],
-    }
-  )
-  .refine(
-    ({ isEdit, password }) => {
-      if (isEdit && !password) return true
-      return /\d/.test(password)
-    },
-    {
-      message: 'Password must contain at least one number.',
-      path: ['password'],
-    }
-  )
-  .refine(
-    ({ isEdit, password, confirmPassword }) => {
-      if (isEdit && !password) return true
-      return password === confirmPassword
-    },
-    {
-      message: "Passwords don't match.",
-      path: ['confirmPassword'],
-    }
-  )
+const formSchema = z.object({
+  username: z.string().trim().min(3, '帳號至少需 3 個字元').max(50),
+  email: z.string().trim().toLowerCase().email('Email 格式不正確'),
+  displayName: z.string().trim().min(1, '請輸入顯示名稱').max(100),
+  roles: z.array(userRoleSchema).min(1, '請至少選擇一個角色'),
+  enabled: z.boolean(),
+  accountNonLocked: z.boolean(),
+  password: z.string(),
+  confirmPassword: z.string(),
+  isEdit: z.boolean(),
+}).superRefine((data, context) => {
+  if (data.isEdit) return
+  if (data.password.length < 8 || data.password.length > 72) {
+    context.addIssue({ code: 'custom', message: '密碼長度需介於 8 至 72 個字元', path: ['password'] })
+  }
+  if (data.password !== data.confirmPassword) {
+    context.addIssue({ code: 'custom', message: '密碼不一致', path: ['confirmPassword'] })
+  }
+})
 type UserForm = z.infer<typeof formSchema>
 
-type UserActionDialogProps = {
-  currentRow?: User
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
+type UsersActionDialogProps = { currentRow?: User; open: boolean; onOpenChange: (open: boolean) => void }
 
-export function UsersActionDialog({
-  currentRow,
-  open,
-  onOpenChange,
-}: UserActionDialogProps) {
+export function UsersActionDialog({ currentRow, open, onOpenChange }: UsersActionDialogProps) {
   const isEdit = !!currentRow
+  const { onCreate, onUpdate } = useUsers()
   const form = useForm<UserForm>({
     resolver: zodResolver(formSchema),
-    defaultValues: isEdit
-      ? {
-          ...currentRow,
-          password: '',
-          confirmPassword: '',
-          isEdit,
-        }
-      : {
-          firstName: '',
-          lastName: '',
-          username: '',
-          email: '',
-          role: '',
-          phoneNumber: '',
-          password: '',
-          confirmPassword: '',
-          isEdit,
-        },
+    defaultValues: currentRow
+      ? { username: currentRow.username, email: currentRow.email, displayName: currentRow.displayName, roles: currentRow.roles, enabled: currentRow.enabled, accountNonLocked: currentRow.accountNonLocked, password: '', confirmPassword: '', isEdit: true }
+      : { username: '', email: '', displayName: '', roles: [], enabled: true, accountNonLocked: true, password: '', confirmPassword: '', isEdit: false },
   })
-
-  const onSubmit = (values: UserForm) => {
+  const onSubmit = useCallback((values: UserForm) => {
+    if (currentRow) {
+      onUpdate(currentRow.id, { email: values.email, displayName: values.displayName, roles: values.roles, enabled: values.enabled, accountNonLocked: values.accountNonLocked })
+    } else {
+      onCreate({ username: values.username, email: values.email, displayName: values.displayName, password: values.password, roles: values.roles })
+    }
     form.reset()
-    showSubmittedData(values)
     onOpenChange(false)
+  }, [currentRow, form, onCreate, onOpenChange, onUpdate])
+  const toggleRole = (role: UserRole, checked: boolean) => {
+    const currentRoles = form.getValues('roles')
+    form.setValue('roles', checked ? [...currentRoles, role] : currentRoles.filter((item) => item !== role), { shouldValidate: true })
   }
-
-  const isPasswordTouched = !!form.formState.dirtyFields.password
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(state) => {
-        form.reset()
-        onOpenChange(state)
-      }}
-    >
-      <DialogContent className='sm:max-w-lg'>
-        <DialogHeader className='text-start'>
-          <DialogTitle>{isEdit ? 'Edit User' : 'Add New User'}</DialogTitle>
-          <DialogDescription>
-            {isEdit ? 'Update the user here. ' : 'Create new user here. '}
-            Click save when you&apos;re done.
-          </DialogDescription>
-        </DialogHeader>
-        <div className='h-105 w-[calc(100%+0.75rem)] overflow-y-auto py-1 pe-3'>
-          <Form {...form}>
-            <form
-              id='user-form'
-              onSubmit={form.handleSubmit(onSubmit)}
-              className='space-y-4 px-0.5'
-            >
-              <FormField
-                control={form.control}
-                name='firstName'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      First Name
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='John'
-                        className='col-span-4'
-                        autoComplete='off'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='lastName'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      Last Name
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='Doe'
-                        className='col-span-4'
-                        autoComplete='off'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='username'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      Username
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='john_doe'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='email'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='john.doe@gmail.com'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='phoneNumber'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      Phone Number
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='+123456789'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='role'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>Role</FormLabel>
-                    <SelectDropdown
-                      defaultValue={field.value}
-                      onValueChange={field.onChange}
-                      placeholder='Select a role'
-                      className='col-span-4'
-                      items={roles.map(({ label, value }) => ({
-                        label,
-                        value,
-                      }))}
-                    />
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='password'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      Password
-                    </FormLabel>
-                    <FormControl>
-                      <PasswordInput
-                        placeholder='e.g., S3cur3P@ssw0rd'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='confirmPassword'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      Confirm Password
-                    </FormLabel>
-                    <FormControl>
-                      <PasswordInput
-                        disabled={!isPasswordTouched}
-                        placeholder='e.g., S3cur3P@ssw0rd'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-            </form>
-          </Form>
-        </div>
-        <DialogFooter>
-          <Button type='submit' form='user-form'>
-            Save changes
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
+  return <Dialog open={open} onOpenChange={(state) => { form.reset(); onOpenChange(state) }}>
+    <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-lg'>
+      <DialogHeader className='text-start'><DialogTitle>{isEdit ? 'Edit User' : 'Add New User'}</DialogTitle><DialogDescription>{isEdit ? 'Update the user account and access settings.' : 'Create a new user account.'}</DialogDescription></DialogHeader>
+      <Form {...form}><form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+        <FormField control={form.control} name='username' render={({ field }) => <FormItem><FormLabel>Username</FormLabel><FormControl><Input autoComplete='username' disabled={isEdit} {...field} /></FormControl><FormMessage /></FormItem>} />
+        <FormField control={form.control} name='displayName' render={({ field }) => <FormItem><FormLabel>Display Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>} />
+        <FormField control={form.control} name='email' render={({ field }) => <FormItem><FormLabel>Email</FormLabel><FormControl><Input type='email' autoComplete='email' {...field} /></FormControl><FormMessage /></FormItem>} />
+        <FormField control={form.control} name='roles' render={() => <FormItem><FormLabel>Roles</FormLabel><div className='space-y-2 rounded-md border p-3'>{roles.map((role) => <label key={role.value} className='flex items-center gap-2 text-sm'><Checkbox checked={form.watch('roles').includes(role.value)} onCheckedChange={(checked) => toggleRole(role.value, checked === true)} />{role.label}</label>)}</div><FormMessage /></FormItem>} />
+        {!isEdit && <><FormField control={form.control} name='password' render={({ field }) => <FormItem><FormLabel>Password</FormLabel><FormControl><PasswordInput autoComplete='new-password' {...field} /></FormControl><FormMessage /></FormItem>} /><FormField control={form.control} name='confirmPassword' render={({ field }) => <FormItem><FormLabel>Confirm Password</FormLabel><FormControl><PasswordInput autoComplete='new-password' {...field} /></FormControl><FormMessage /></FormItem>} /></>}
+        {isEdit && <div className='space-y-3 rounded-md border p-3'><FormField control={form.control} name='enabled' render={({ field }) => <FormItem className='flex items-center justify-between space-y-0'><FormLabel>Account enabled</FormLabel><FormControl><Checkbox checked={field.value} onCheckedChange={(value) => field.onChange(value === true)} /></FormControl></FormItem>} /><FormField control={form.control} name='accountNonLocked' render={({ field }) => <FormItem className='flex items-center justify-between space-y-0'><FormLabel>Account unlocked</FormLabel><FormControl><Checkbox checked={field.value} onCheckedChange={(value) => field.onChange(value === true)} /></FormControl></FormItem>} /></div>}
+        <DialogFooter><Button type='submit'>Save</Button></DialogFooter>
+      </form></Form>
+    </DialogContent>
+  </Dialog>
 }

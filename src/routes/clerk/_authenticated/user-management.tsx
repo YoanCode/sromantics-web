@@ -20,7 +20,7 @@ import { UsersDialogs } from '@/features/users/components/users-dialogs'
 import { UsersPrimaryButtons } from '@/features/users/components/users-primary-buttons'
 import { UsersProvider } from '@/features/users/components/users-provider'
 import { UsersTable } from '@/features/users/components/users-table'
-import { users } from '@/features/users/data/users'
+import { useUsersQuery } from '@/features/users/queries'
 
 export const Route = createFileRoute('/clerk/_authenticated/user-management')({
   component: UserManagement,
@@ -29,6 +29,7 @@ export const Route = createFileRoute('/clerk/_authenticated/user-management')({
 function UserManagement() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
+  const { data: users = [], isLoading } = useUsersQuery()
 
   const [opened, setOpened] = useState(true)
   const { isLoaded, isSignedIn } = useAuth()
@@ -87,7 +88,11 @@ function UserManagement() {
           </div>
           <UsersPrimaryButtons />
         </div>
-        <UsersTable data={users} navigate={navigate} search={search} />
+        {isLoading ? (
+          <p className='text-muted-foreground'>Loading...</p>
+        ) : (
+          <UsersTable data={users} navigate={navigate} search={search} />
+        )}
       </Main>
 
       <UsersDialogs />
