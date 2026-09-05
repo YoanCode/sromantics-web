@@ -100,6 +100,7 @@ When an API is unavailable, use a supported role, text, or locator query and kee
 
 Required dialog coverage should include:
 
+- Date fields appear before other editable fields in CRUD dialogs.
 - Validation appears when submitting invalid input.
 - Confirmation controls remain disabled until the required value is entered.
 - Valid submission calls the expected callback and closes the dialog.

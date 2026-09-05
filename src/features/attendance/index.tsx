@@ -6,9 +6,11 @@ import { useEnrollmentsQuery } from '@/features/enrollments/queries'
 import { useStudentCoursesQuery } from '@/features/student-courses/queries'
 import { useStudentsQuery } from '@/features/students/queries'
 import { useAttendanceMutations, useAttendanceQuery } from './queries'
+import { useMakeUpCreditsQuery } from '@/features/make-up-credits/queries'
 
 const fields = [
   { key: 'enrollmentId', label: 'Enrollment', options: [], showInTable: false },
+  { key: 'makeUpCreditId', label: 'Make-up Credit', options: [], showInTable: false },
   { key: 'enrollmentName', label: 'Enrollment', readOnly: true },
   { key: 'studentName', label: 'Student', readOnly: true },
   { key: 'className', label: 'Class', readOnly: true },
@@ -23,7 +25,8 @@ export function AttendancePage() {
   const { data: studentCourses = [], isLoading: studentCoursesLoading } = useStudentCoursesQuery()
   const { data: students = [], isLoading: studentsLoading } = useStudentsQuery()
   const { data: classes = [], isLoading: classesLoading } = useClassesQuery()
-    const { data: courses = [], isLoading: coursesLoading } = useCoursesQuery()
+  const { data: courses = [], isLoading: coursesLoading } = useCoursesQuery()
+  const { data: makeUpCredits = [], isLoading: makeUpCreditsLoading } = useMakeUpCreditsQuery()
   const mutations = useAttendanceMutations()
 
   const courseNameById = new Map(courses.map((course) => [course.id, course.name]))
@@ -56,7 +59,26 @@ export function AttendancePage() {
       description='Record and review daily attendance for enrolled students.'
       resourceLabel='Attendance'
       showId={false}
-      fields={fields.map((field) => field.key === 'enrollmentId' ? {
+      fields={fields.map((field) => field.key === 'makeUpCreditId' ? {
+        ...field,
+        options: (form: Record<string, unknown>) => {
+          const enrollment = enrollments.find((item) => item.id === form.enrollmentId)
+          const attendanceDate = String(form.attendanceDate ?? '')
+          return [
+            { value: '', label: 'Regular attendance' },
+            ...makeUpCredits
+              .filter((credit) =>
+                credit.status === 'scheduled' &&
+                credit.targetDate === attendanceDate &&
+                enrollment?.id === credit.sourceEnrollmentId
+              )
+              .map((credit) => ({
+                value: credit.id,
+                label: `Make-up credit (${credit.targetDate})`,
+              })),
+          ]
+        },
+      } : field.key === 'enrollmentId' ? {
         ...field,
         options: (form: Record<string, unknown>) => {
           const attendanceDate = String(form.attendanceDate ?? '')
@@ -64,6 +86,12 @@ export function AttendancePage() {
             .filter((item) => {
               if (item.status === 'cancelled') return false
               if (!attendanceDate) return true
+              const scheduledMakeUp = makeUpCredits.some((credit) =>
+                credit.status === 'scheduled' &&
+                credit.sourceEnrollmentId === item.id &&
+                credit.targetDate === attendanceDate
+              )
+              if (scheduledMakeUp) return true
               const classItem = classes.find((clazz) => clazz.id === item.classId)
               return Boolean(
                 classItem &&
@@ -80,16 +108,26 @@ export function AttendancePage() {
               const classLabel = classItem
                 ? `${classItem.className} (${classItem.startTime}-${classItem.endTime})`
                 : 'Unknown class'
+              const scheduledMakeUp = makeUpCredits.find((credit) =>
+                credit.status === 'scheduled' &&
+                credit.sourceEnrollmentId === item.id &&
+                credit.targetDate === attendanceDate
+              )
+              const targetClass = scheduledMakeUp
+                ? classes.find((clazz) => clazz.id === scheduledMakeUp.targetClassId)
+                : undefined
+              const label = targetClass
+                ? `${studentName} - ${courseName} - Make-up: ${targetClass.className} (${targetClass.startTime}-${targetClass.endTime}) - Original: ${classLabel}`
+                : `${studentName} - ${courseName} - ${classLabel}`
               return {
                 value: item.id,
-                label: `${studentName} - ${courseName} - ${classLabel}`,
+                label,
               }
             })
         },
       } : field) as { key: string; label: string; type?: 'date'; readOnly?: boolean; resetKeys?: string[]; options?: { value: string; label: string }[] | ((form: Record<string, unknown>) => { value: string; label: string }[]); showInTable?: boolean }[]}
       rows={rows as unknown as (Record<string, unknown> & { id: string })[]}
-      isLoading={isLoading || enrollmentsLoading || studentCoursesLoading || studentsLoading || classesLoading}
-        isLoading={isLoading || enrollmentsLoading || studentCoursesLoading || studentsLoading || classesLoading || coursesLoading}
+      isLoading={isLoading || enrollmentsLoading || studentCoursesLoading || studentsLoading || classesLoading || coursesLoading || makeUpCreditsLoading}
       onCreate={(payload) => mutations.create.mutateAsync(payload as Omit<Attendance, 'id' | 'studentCourseId' | 'classId' | 'recordedAt'>)}
       onUpdate={(id, payload) => mutations.update.mutateAsync({ id, data: payload as Attendance })}
       onDelete={(id) => mutations.remove.mutateAsync(id)}

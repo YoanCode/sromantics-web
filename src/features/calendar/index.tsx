@@ -19,6 +19,7 @@ import { useEnrollmentsQuery } from '@/features/enrollments/queries'
 import { useStudentCoursesQuery } from '@/features/student-courses/queries'
 import { useStudentsQuery } from '@/features/students/queries'
 import { useAttendanceQuery } from '@/features/attendance/queries'
+import { useMakeUpCreditsQuery } from '@/features/make-up-credits/queries'
 import type { Attendance, Class, Enrollment, Student } from '@/types/mds'
 import './calendar.css'
 
@@ -37,9 +38,15 @@ type CalendarParticipant = {
   student: Student
 }
 
+type CalendarMakeUpParticipant = {
+  date: string
+  student: Student
+}
+
 type CalendarEventProps =
-  | { kind: 'class'; classItem: Class; participants: CalendarParticipant[] }
+  | { kind: 'class'; classItem: Class; participants: CalendarParticipant[]; makeUpParticipants: CalendarMakeUpParticipant[] }
   | { kind: 'absence'; classItem: Class; student: Student }
+  | { kind: 'makeup'; classItem: Class; student: Student }
 
 function isEnrollmentValidOnDate(enrollment: Enrollment, dateKey: string) {
   return (
@@ -74,7 +81,8 @@ function getParticipantsOnDate(
 function toEvent(
   classItem: Class,
   courseName: string,
-  participants: CalendarParticipant[]
+  participants: CalendarParticipant[],
+  makeUpParticipants: Student[]
 ) {
   return {
     id: classItem.id,
@@ -89,6 +97,7 @@ function toEvent(
       classItem,
       courseName,
       participants,
+      makeUpParticipants,
     },
   }
 }
@@ -109,6 +118,22 @@ function toAbsenceEvent(attendance: Attendance, classItem: Class, student: Stude
   }
 }
 
+function toMakeUpEvent(credit: { id: string; targetDate?: string }, classItem: Class, student: Student) {
+  return {
+    id: `makeup-${credit.id}`,
+    title: `Make-up: ${student.name}`,
+    start: `${credit.targetDate}T${classItem.startTime}`,
+    end: `${credit.targetDate}T${classItem.endTime}`,
+    backgroundColor: '#c2410c',
+    borderColor: '#9a3412',
+    extendedProps: {
+      kind: 'makeup' as const,
+      classItem,
+      student,
+    },
+  }
+}
+
 function renderEventContent(eventInfo: {
   event: {
     title: string
@@ -117,7 +142,7 @@ function renderEventContent(eventInfo: {
   }
 }) {
   const eventProps = eventInfo.event.extendedProps
-  if (eventProps.kind === 'absence') {
+  if (eventProps.kind === 'absence' || eventProps.kind === 'makeup') {
     return (
       <div className='calendar-event-content'>
         <strong>{eventInfo.event.title}</strong>
@@ -131,7 +156,16 @@ function renderEventContent(eventInfo: {
     eventProps.participants,
     eventInfo.event.start
   )
-  const studentCount = participants.length
+  const dateKey = eventInfo.event.start ? getDateKey(eventInfo.event.start) : ''
+  const allParticipants = new Map(
+    [
+      ...participants,
+      ...eventProps.makeUpParticipants
+        .filter((participant) => participant.date === dateKey)
+        .map((participant) => participant.student),
+    ].map((student) => [student.id, student])
+  )
+  const studentCount = allParticipants.size
   return (
     <div className='calendar-event-content'>
       <strong>{eventInfo.event.title}</strong>
@@ -148,6 +182,7 @@ export function CalendarPage() {
   const { data: studentCourses = [], isLoading: studentCoursesLoading } = useStudentCoursesQuery()
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useEnrollmentsQuery()
   const { data: attendances = [], isLoading: attendancesLoading } = useAttendanceQuery()
+  const { data: makeUpCredits = [], isLoading: makeUpCreditsLoading } = useMakeUpCreditsQuery()
   const [selectedClass, setSelectedClass] = useState<Class>()
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
@@ -174,6 +209,9 @@ export function CalendarPage() {
 
   const events = useMemo(
     () => {
+      const studentById = new Map(students.map((student) => [student.id, student]))
+      const studentCourseById = new Map(studentCourses.map((item) => [item.id, item]))
+      const classById = new Map(classes.map((classItem) => [classItem.id, classItem]))
       const classEvents = classes.map((classItem) => {
         const courseName =
           courses.find((course) => course.id === classItem.courseId)?.name ??
@@ -181,12 +219,21 @@ export function CalendarPage() {
         return toEvent(
           classItem,
           courseName,
-          enrollmentParticipantsByClass.get(classItem.id) ?? []
+          enrollmentParticipantsByClass.get(classItem.id) ?? [],
+          makeUpCredits
+            .filter((credit) => credit.status === 'scheduled' && credit.targetClassId === classItem.id)
+            .flatMap((credit) => {
+              const sourceEnrollment = enrollments.find((item) => item.id === credit.sourceEnrollmentId)
+              const studentCourse = sourceEnrollment
+                ? studentCourseById.get(sourceEnrollment.studentCourseId)
+                : undefined
+              const student = studentCourse ? studentById.get(studentCourse.studentId) : undefined
+              return student && credit.targetDate
+                ? [{ date: credit.targetDate, student }]
+                : []
+            })
         )
       })
-      const studentById = new Map(students.map((student) => [student.id, student]))
-      const studentCourseById = new Map(studentCourses.map((item) => [item.id, item]))
-      const classById = new Map(classes.map((classItem) => [classItem.id, classItem]))
       const absenceEvents = attendances.flatMap((attendance) => {
         if (attendance.status !== 'absent') return []
         const enrollment = enrollments.find((item) => item.id === attendance.enrollmentId)
@@ -197,10 +244,28 @@ export function CalendarPage() {
         const classItem = classById.get(attendance.classId)
         return student && classItem ? [toAbsenceEvent(attendance, classItem, student)] : []
       })
-      return [...classEvents, ...absenceEvents]
+      const makeUpEvents = makeUpCredits.flatMap((credit) => {
+        if (credit.status !== 'scheduled' || !credit.targetDate || !credit.targetClassId) return []
+        const sourceEnrollment = enrollments.find((item) => item.id === credit.sourceEnrollmentId)
+        const studentCourse = sourceEnrollment
+          ? studentCourseById.get(sourceEnrollment.studentCourseId)
+          : undefined
+        const student = studentCourse ? studentById.get(studentCourse.studentId) : undefined
+        const classItem = classById.get(credit.targetClassId)
+        return student && classItem ? [toMakeUpEvent(credit, classItem, student)] : []
+      })
+      return [...classEvents, ...absenceEvents, ...makeUpEvents]
     },
-    [attendances, classes, courses, enrollmentParticipantsByClass, enrollments, studentCourses, students]
+    [attendances, classes, courses, enrollmentParticipantsByClass, enrollments, makeUpCredits, studentCourses, students]
   )
+
+  const initialCalendarDate = useMemo(() => {
+    const scheduledDates = makeUpCredits
+      .filter((credit) => credit.status === 'scheduled' && credit.targetDate)
+      .map((credit) => credit.targetDate as string)
+      .sort()
+    return scheduledDates[0]
+  }, [makeUpCredits])
 
   const handleEventClick = (event: EventClickArg) => {
     const classItem = event.event.extendedProps.classItem as Class | undefined
@@ -214,6 +279,21 @@ export function CalendarPage() {
         enrollmentParticipantsByClass.get(selectedClass.id) ?? [],
         selectedDate
       )
+    : []
+
+  const selectedMakeUpStudents = selectedClass && selectedDate
+    ? makeUpCredits
+        .filter((credit) =>
+          credit.status === 'scheduled' &&
+          credit.targetClassId === selectedClass.id &&
+          credit.targetDate === getDateKey(selectedDate)
+        )
+        .map((credit) => {
+          const enrollment = enrollments.find((item) => item.id === credit.sourceEnrollmentId)
+          const studentCourse = studentCourses.find((item) => item.id === enrollment?.studentCourseId)
+          return students.find((student) => student.id === studentCourse?.studentId)
+        })
+        .filter((student): student is Student => Boolean(student))
     : []
 
   const selectedAbsentStudents = selectedClass && selectedDate
@@ -257,12 +337,13 @@ export function CalendarPage() {
         <div className='flex flex-col gap-4'>
           <Card className='min-w-0'>
             <CardContent className='p-3 sm:p-5'>
-              {classesLoading || coursesLoading || studentsLoading || studentCoursesLoading || enrollmentsLoading || attendancesLoading ? (
+              {classesLoading || coursesLoading || studentsLoading || studentCoursesLoading || enrollmentsLoading || attendancesLoading || makeUpCreditsLoading ? (
                 <p className='py-12 text-center text-muted-foreground'>Loading schedule...</p>
               ) : (
                 <FullCalendar
                   plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                   initialView='timeGridWeek'
+                  initialDate={initialCalendarDate}
                   headerToolbar={{
                     left: 'prev,next today',
                     center: 'title',
@@ -329,6 +410,16 @@ export function CalendarPage() {
                             <p className='font-medium text-red-700'>Absent students</p>
                             <ul className='mt-1 list-inside list-disc text-red-700'>
                               {selectedAbsentStudents.map((student) => (
+                                <li key={student.id}>{student.name}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {selectedMakeUpStudents.length > 0 && (
+                          <div className='mt-3'>
+                            <p className='font-medium text-orange-700'>Make-up students</p>
+                            <ul className='mt-1 list-inside list-disc text-orange-700'>
+                              {selectedMakeUpStudents.map((student) => (
                                 <li key={student.id}>{student.name}</li>
                               ))}
                             </ul>

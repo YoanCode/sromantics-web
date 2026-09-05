@@ -32,6 +32,7 @@ import { Route as AuthenticatedStudentsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedStudentCoursesIndexRouteImport } from './routes/_authenticated/student-courses/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedParentsIndexRouteImport } from './routes/_authenticated/parents/index'
+import { Route as AuthenticatedMakeUpCreditsIndexRouteImport } from './routes/_authenticated/make-up-credits/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedEnrollmentsIndexRouteImport } from './routes/_authenticated/enrollments/index'
 import { Route as AuthenticatedCoursesIndexRouteImport } from './routes/_authenticated/courses/index'
@@ -165,6 +166,12 @@ const AuthenticatedParentsIndexRoute =
     path: '/parents/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMakeUpCreditsIndexRoute =
+  AuthenticatedMakeUpCreditsIndexRouteImport.update({
+    id: '/make-up-credits/',
+    path: '/make-up-credits/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedHelpCenterIndexRoute =
   AuthenticatedHelpCenterIndexRouteImport.update({
     id: '/help-center/',
@@ -288,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/courses/': typeof AuthenticatedCoursesIndexRoute
   '/enrollments/': typeof AuthenticatedEnrollmentsIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/make-up-credits/': typeof AuthenticatedMakeUpCreditsIndexRoute
   '/parents/': typeof AuthenticatedParentsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/student-courses/': typeof AuthenticatedStudentCoursesIndexRoute
@@ -324,6 +332,7 @@ export interface FileRoutesByTo {
   '/courses': typeof AuthenticatedCoursesIndexRoute
   '/enrollments': typeof AuthenticatedEnrollmentsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
+  '/make-up-credits': typeof AuthenticatedMakeUpCreditsIndexRoute
   '/parents': typeof AuthenticatedParentsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/student-courses': typeof AuthenticatedStudentCoursesIndexRoute
@@ -366,6 +375,7 @@ export interface FileRoutesById {
   '/_authenticated/courses/': typeof AuthenticatedCoursesIndexRoute
   '/_authenticated/enrollments/': typeof AuthenticatedEnrollmentsIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/_authenticated/make-up-credits/': typeof AuthenticatedMakeUpCreditsIndexRoute
   '/_authenticated/parents/': typeof AuthenticatedParentsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/student-courses/': typeof AuthenticatedStudentCoursesIndexRoute
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/courses/'
     | '/enrollments/'
     | '/help-center/'
+    | '/make-up-credits/'
     | '/parents/'
     | '/settings/'
     | '/student-courses/'
@@ -441,6 +452,7 @@ export interface FileRouteTypes {
     | '/courses'
     | '/enrollments'
     | '/help-center'
+    | '/make-up-credits'
     | '/parents'
     | '/settings'
     | '/student-courses'
@@ -482,6 +494,7 @@ export interface FileRouteTypes {
     | '/_authenticated/courses/'
     | '/_authenticated/enrollments/'
     | '/_authenticated/help-center/'
+    | '/_authenticated/make-up-credits/'
     | '/_authenticated/parents/'
     | '/_authenticated/settings/'
     | '/_authenticated/student-courses/'
@@ -664,6 +677,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParentsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/make-up-credits/': {
+      id: '/_authenticated/make-up-credits/'
+      path: '/make-up-credits'
+      fullPath: '/make-up-credits/'
+      preLoaderRoute: typeof AuthenticatedMakeUpCreditsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/help-center/': {
       id: '/_authenticated/help-center/'
       path: '/help-center'
@@ -834,6 +854,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCoursesIndexRoute: typeof AuthenticatedCoursesIndexRoute
   AuthenticatedEnrollmentsIndexRoute: typeof AuthenticatedEnrollmentsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
+  AuthenticatedMakeUpCreditsIndexRoute: typeof AuthenticatedMakeUpCreditsIndexRoute
   AuthenticatedParentsIndexRoute: typeof AuthenticatedParentsIndexRoute
   AuthenticatedStudentCoursesIndexRoute: typeof AuthenticatedStudentCoursesIndexRoute
   AuthenticatedStudentsIndexRoute: typeof AuthenticatedStudentsIndexRoute
@@ -853,6 +874,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCoursesIndexRoute: AuthenticatedCoursesIndexRoute,
   AuthenticatedEnrollmentsIndexRoute: AuthenticatedEnrollmentsIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
+  AuthenticatedMakeUpCreditsIndexRoute: AuthenticatedMakeUpCreditsIndexRoute,
   AuthenticatedParentsIndexRoute: AuthenticatedParentsIndexRoute,
   AuthenticatedStudentCoursesIndexRoute: AuthenticatedStudentCoursesIndexRoute,
   AuthenticatedStudentsIndexRoute: AuthenticatedStudentsIndexRoute,

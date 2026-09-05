@@ -131,6 +131,11 @@ export const sidebarData: SidebarData = {
           icon: ClipboardCheck,
         },
         {
+          title: 'Make-up Credits',
+          url: '/make-up-credits',
+          icon: CalendarCheck,
+        },
+        {
           title: 'Secured by Clerk',
           icon: ClerkLogo,
           hidden: true,

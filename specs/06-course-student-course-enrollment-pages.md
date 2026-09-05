@@ -49,12 +49,24 @@
 - 支援 `present`、`absent`、`late`、`excused`。
 - 建立、修改或刪除出席紀錄時，由 API 同步更新 StudentCourse 堂數。
 - Attendance 新增、修改或刪除成功後，前端必須重新載入 Attendance 與 StudentCourse 資料，讓堂數立即反映最新結果。
+- Attendance 狀態由一般出席改為缺席時，頁面應在成功後顯示新產生的補課資格；由缺席改回出席或請假時，尚未使用的補課資格應同步取消。
 - Calendar 使用同一份 Attendance query cache，因此 Attendance 異動成功後，日曆中的缺席事件也必須同步更新。
 - Enrollment 下拉選項顯示學生名稱、課程名稱、班級名稱與上課時間，不直接顯示技術 ID。
 - 選擇出席日期後，Enrollment 下拉只顯示日期落在報名區間內、未取消且符合班級固定上課星期的報名紀錄。
 - 變更出席日期時，清除原本選取的 Enrollment，避免提交過期或不符合日期的報名紀錄。
 - 同一 Enrollment 同一天不可重複建立出席紀錄。
 - API base path：`/api/attendances`。
+
+## Make-up credits page
+
+- Route：`/make-up-credits`。
+- 補課資格不可由前端任意新增，只能由 `absent` Attendance 自動產生。
+- 顯示學生、來源缺席、有效期限、補課狀態、目標班級、目標日期與備註。
+- 目標班級選項只顯示來源 StudentCourse 所屬 Course 的 Class，並顯示班級名稱與上課時間。
+- 可安排或取消尚未使用的補課資格；已使用、已過期或已取消的資格不可修改。
+- 安排補課後，實際補課 Attendance 必須使用相同 `makeUpCreditId`，成功後補課資格標記為 `used`。
+- Attendance 新增表單在補課日期應顯示來源 Enrollment，即使該日期不是來源班級的固定上課日；選擇補課資格後，API 會將出席歸屬至補課目標班級。
+- 當指定日期有已安排的補課資格時，Enrollment 選項應顯示補課目標班級與原報名班級，避免畫面只顯示原缺席課程造成誤解。
 
 ## Acceptance criteria
 

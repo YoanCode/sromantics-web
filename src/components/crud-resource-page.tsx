@@ -42,10 +42,18 @@ type CrudResourcePageProps = {
   onUpdate: (id: string, data: Record<string, unknown>) => Promise<unknown>
   onDelete: (id: string) => Promise<unknown>
   showId?: boolean
+  canCreate?: boolean
+  deleteLabel?: string
 }
 
 function getOptions(field: Field, form: Record<string, unknown>) {
   return typeof field.options === 'function' ? field.options(form) : field.options
+}
+
+function getDialogFields(fields: Field[]) {
+  return fields
+    .filter((field) => !field.readOnly)
+    .toSorted((left, right) => Number(right.type === 'date') - Number(left.type === 'date'))
 }
 
 function toFormData(row: ResourceRow | undefined, fields: Field[]) {
@@ -68,6 +76,8 @@ export function CrudResourcePage({
   onUpdate,
   onDelete,
   showId = true,
+  canCreate = true,
+  deleteLabel = 'Delete',
 }: CrudResourcePageProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingRow, setEditingRow] = useState<ResourceRow>()
@@ -125,7 +135,7 @@ export function CrudResourcePage({
             <h2 className='text-2xl font-bold tracking-tight'>{title}</h2>
             <p className='text-muted-foreground'>{description}</p>
           </div>
-          <Button onClick={openCreate}>Add {resourceLabel}</Button>
+          {canCreate && <Button onClick={openCreate}>Add {resourceLabel}</Button>}
         </div>
         {isLoading ? (
           <p className='text-muted-foreground'>Loading...</p>
@@ -162,7 +172,7 @@ export function CrudResourcePage({
                           size='sm'
                           onClick={() => void onDelete(row.id)}
                         >
-                          Delete
+                          {deleteLabel}
                         </Button>
                       </div>
                     </td>
@@ -195,7 +205,7 @@ export function CrudResourcePage({
             </DialogTitle>
           </DialogHeader>
           <div className='grid gap-4 py-4'>
-            {fields.filter((field) => !field.readOnly).map((field) => (
+            {getDialogFields(fields).map((field) => (
               <div key={field.key} className='grid gap-2'>
                 <Label htmlFor={field.key}>{field.label}</Label>
                 {getOptions(field, form) ? (

@@ -29,6 +29,8 @@ Provide an authenticated calendar view for the cram school schedule using the ex
 - Load Attendance data through the existing attendance query.
 - Each `absent` Attendance is rendered as a red event on its recorded date and the related Class time range, labeled with the absent student's name.
 - Clicking a class or absence event shows the class detail and lists absent students for that specific occurrence date.
+- Scheduled MakeUpCredit records are rendered as orange events at the target Class time, labeled with the student's name.
+- When scheduled make-up credits exist, the calendar initially opens on the earliest scheduled make-up date so the event is immediately discoverable; unscheduled `available` credits remain on the Make-up Credits page until a target class and date are assigned.
 - Show a loading state while Classes or Courses data is loading.
 - Calendar events display both the class name and classroom in the event body.
 - The selected class detail panel appears below the calendar at full width; it must not reduce the calendar's horizontal width.

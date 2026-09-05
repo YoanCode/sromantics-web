@@ -82,7 +82,24 @@ export const attendanceSchema = z.object({
   classId: z.string(),
   attendanceDate: z.string(),
   status: z.enum(['present', 'absent', 'late', 'excused']),
+  makeUpCreditId: z.string().optional(),
   note: z.string().optional(),
   recordedAt: z.string().optional(),
 })
 export type Attendance = z.infer<typeof attendanceSchema>
+
+export const makeUpCreditSchema = z.object({
+  id: z.string(),
+  studentId: z.string(),
+  sourceAttendanceId: z.string(),
+  sourceEnrollmentId: z.string(),
+  validUntil: z.string(),
+  status: z.enum(['available', 'scheduled', 'used', 'expired', 'cancelled']),
+  targetClassId: z.string().optional(),
+  targetDate: z.string().optional(),
+  usedAttendanceId: z.string().optional(),
+  note: z.string().optional(),
+  createdAt: z.string().optional(),
+  usedAt: z.string().optional(),
+})
+export type MakeUpCredit = z.infer<typeof makeUpCreditSchema>
