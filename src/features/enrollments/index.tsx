@@ -7,7 +7,7 @@ import { useStudentsQuery } from '@/features/students/queries'
 import { useCoursesQuery } from '@/features/courses/queries'
 
 const fields = [
-  { key: 'studentCourseId', label: 'Student Course', options: [], showInTable: false },
+  { key: 'studentCourseId', label: 'Student Course', options: [], resetKeys: ['classId'], showInTable: false },
   { key: 'studentCourseName', label: 'Student Course', readOnly: true },
   { key: 'classId', label: 'Class', options: [], showInTable: false },
   { key: 'className', label: 'Class Name', readOnly: true },
@@ -36,13 +36,27 @@ export function Enrollments() {
       'Unknown class',
   }))
 
+  const classOptions = (form: Record<string, unknown>) => [{ value: '', label: 'Select a class' }, ...classes
+    .filter((item) => {
+      const selected = studentCourses.find((course) => course.id === form.studentCourseId)
+      return !selected || selected.courseId === item.courseId
+    })]
+    .map((item) => {
+      const course = courses.find((value) => value.id === item.courseId)
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      return {
+        value: item.id,
+        label: `${course?.name ?? 'Unknown course'} - ${item.className} (${dayNames[item.dayOfWeek % 7]} ${item.startTime}-${item.endTime})`,
+      }
+    })
+
   return (
     <CrudResourcePage
       title='Enrollments'
       description='Manage current class memberships and transfer history.'
       resourceLabel='Enrollment'
       showId={false}
-      fields={fields.map((field) => field.key === 'studentCourseId' ? { ...field, options: studentCourses.map((item) => ({ value: item.id, label: `${students.find((value) => value.id === item.studentId)?.name ?? 'Unknown student'} - ${courses.find((value) => value.id === item.courseId)?.name ?? 'Unknown course'}` })) } : field.key === 'classId' ? { ...field, options: classes.map((item) => ({ value: item.id, label: item.className })) } : field) as { key: string; label: string; type?: 'date'; options?: { value: string; label: string }[]; readOnly?: boolean; showInTable?: boolean }[]}
+      fields={fields.map((field) => field.key === 'studentCourseId' ? { ...field, options: studentCourses.map((item) => ({ value: item.id, label: `${students.find((value) => value.id === item.studentId)?.name ?? 'Unknown student'} - ${courses.find((value) => value.id === item.courseId)?.name ?? 'Unknown course'}` })) } : field.key === 'classId' ? { ...field, options: classOptions } : field) as { key: string; label: string; type?: 'date'; options?: { value: string; label: string }[] | ((form: Record<string, unknown>) => { value: string; label: string }[]); readOnly?: boolean; showInTable?: boolean; resetKeys?: string[] }[]}
       rows={rows as unknown as (Record<string, unknown> & { id: string })[]}
       isLoading={isLoading || classesLoading || studentCoursesLoading || studentsLoading || coursesLoading}
       onCreate={(payload) => mutations.create.mutateAsync(payload as Omit<Enrollment, 'id'>)}

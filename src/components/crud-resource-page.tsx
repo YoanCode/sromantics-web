@@ -24,8 +24,9 @@ type Field = {
   readOnly?: boolean
   showInTable?: boolean
   disabled?: boolean
-  options?: { value: string; label: string }[]
+  options?: { value: string; label: string }[] | ((form: Record<string, unknown>) => { value: string; label: string }[])
   defaultValue?: string | number
+  resetKeys?: string[]
 }
 
 type ResourceRow = Record<string, unknown> & { id: string }
@@ -43,11 +44,15 @@ type CrudResourcePageProps = {
   showId?: boolean
 }
 
+function getOptions(field: Field, form: Record<string, unknown>) {
+  return typeof field.options === 'function' ? field.options(form) : field.options
+}
+
 function toFormData(row: ResourceRow | undefined, fields: Field[]) {
   return Object.fromEntries(
     fields.map((field) => [
       field.key,
-      row?.[field.key] ?? field.defaultValue ?? (field.options?.[0]?.value ?? ''),
+      row?.[field.key] ?? field.defaultValue ?? (getOptions(field, {})?.[0]?.value ?? ''),
     ])
   )
 }
@@ -193,16 +198,23 @@ export function CrudResourcePage({
             {fields.filter((field) => !field.readOnly).map((field) => (
               <div key={field.key} className='grid gap-2'>
                 <Label htmlFor={field.key}>{field.label}</Label>
-                {field.options ? (
+                {getOptions(field, form) ? (
                   <select
                     id={field.key}
                     className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
                     value={String(form[field.key] ?? '')}
                     onChange={(event) =>
-                      setForm((current) => ({ ...current, [field.key]: event.target.value }))
+                      setForm((current) => ({
+                        ...current,
+                        [field.key]: event.target.value,
+                        ...(field.resetKeys ?? []).reduce(
+                          (values, key) => ({ ...values, [key]: '' }),
+                          {}
+                        ),
+                      }))
                     }
                   >
-                    {field.options.map((option) => (
+                    {getOptions(field, form)?.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>

@@ -11,7 +11,10 @@ export function useAttendanceQuery() {
 
 export function useAttendanceMutations() {
   const queryClient = useQueryClient()
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ATTENDANCE_KEY })
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ATTENDANCE_KEY })
+    void queryClient.invalidateQueries({ queryKey: ['student-courses'] })
+  }
   return {
     create: useMutation({
       mutationFn: attendanceApi.create,

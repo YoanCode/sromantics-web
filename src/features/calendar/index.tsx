@@ -18,7 +18,8 @@ import { useCoursesQuery } from '@/features/courses/queries'
 import { useEnrollmentsQuery } from '@/features/enrollments/queries'
 import { useStudentCoursesQuery } from '@/features/student-courses/queries'
 import { useStudentsQuery } from '@/features/students/queries'
-import type { Class, Student } from '@/types/mds'
+import { useAttendanceQuery } from '@/features/attendance/queries'
+import type { Attendance, Class, Enrollment, Student } from '@/types/mds'
 import './calendar.css'
 
 const dayNames: Record<number, string> = {
@@ -31,7 +32,50 @@ const dayNames: Record<number, string> = {
   7: 'Sunday',
 }
 
-function toEvent(classItem: Class, courseName: string, studentCount: number) {
+type CalendarParticipant = {
+  enrollment: Enrollment
+  student: Student
+}
+
+type CalendarEventProps =
+  | { kind: 'class'; classItem: Class; participants: CalendarParticipant[] }
+  | { kind: 'absence'; classItem: Class; student: Student }
+
+function isEnrollmentValidOnDate(enrollment: Enrollment, dateKey: string) {
+  return (
+    enrollment.status !== 'cancelled' &&
+    enrollment.startedAt <= dateKey &&
+    (!enrollment.endedAt || enrollment.endedAt >= dateKey)
+  )
+}
+
+function getDateKey(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getParticipantsOnDate(
+  participants: CalendarParticipant[],
+  date: Date | null
+) {
+  if (!date) return []
+  const dateKey = getDateKey(date)
+  const uniqueStudents = new Map<string, Student>()
+
+  participants
+    .filter(({ enrollment }) => isEnrollmentValidOnDate(enrollment, dateKey))
+    .forEach(({ student }) => uniqueStudents.set(student.id, student))
+
+  return [...uniqueStudents.values()]
+}
+
+function toEvent(
+  classItem: Class,
+  courseName: string,
+  participants: CalendarParticipant[]
+) {
   return {
     id: classItem.id,
     title: classItem.className,
@@ -41,18 +85,53 @@ function toEvent(classItem: Class, courseName: string, studentCount: number) {
     backgroundColor: classItem.courseId === 'c_math' ? '#0f766e' : '#1d4ed8',
     borderColor: 'transparent',
     extendedProps: {
+      kind: 'class',
       classItem,
       courseName,
-      studentCount,
+      participants,
+    },
+  }
+}
+
+function toAbsenceEvent(attendance: Attendance, classItem: Class, student: Student) {
+  return {
+    id: `absence-${attendance.id}`,
+    title: `Absent: ${student.name}`,
+    start: `${attendance.attendanceDate}T${classItem.startTime}`,
+    end: `${attendance.attendanceDate}T${classItem.endTime}`,
+    backgroundColor: '#b91c1c',
+    borderColor: '#991b1b',
+    extendedProps: {
+      kind: 'absence' as const,
+      classItem,
+      student,
     },
   }
 }
 
 function renderEventContent(eventInfo: {
-  event: { title: string; extendedProps: { classItem: Class; studentCount: number } }
+  event: {
+    title: string
+    start: Date | null
+    extendedProps: CalendarEventProps
+  }
 }) {
-  const classItem = eventInfo.event.extendedProps.classItem
-  const studentCount = eventInfo.event.extendedProps.studentCount
+  const eventProps = eventInfo.event.extendedProps
+  if (eventProps.kind === 'absence') {
+    return (
+      <div className='calendar-event-content'>
+        <strong>{eventInfo.event.title}</strong>
+        <span>{eventProps.classItem.classroom}</span>
+      </div>
+    )
+  }
+
+  const classItem = eventProps.classItem
+  const participants = getParticipantsOnDate(
+    eventProps.participants,
+    eventInfo.event.start
+  )
+  const studentCount = participants.length
   return (
     <div className='calendar-event-content'>
       <strong>{eventInfo.event.title}</strong>
@@ -68,48 +147,88 @@ export function CalendarPage() {
   const { data: students = [], isLoading: studentsLoading } = useStudentsQuery()
   const { data: studentCourses = [], isLoading: studentCoursesLoading } = useStudentCoursesQuery()
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useEnrollmentsQuery()
+  const { data: attendances = [], isLoading: attendancesLoading } = useAttendanceQuery()
   const [selectedClass, setSelectedClass] = useState<Class>()
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
-  const participantsByClass = useMemo(() => {
+  const enrollmentParticipantsByClass = useMemo(() => {
     const studentById = new Map(students.map((student) => [student.id, student]))
     const studentCourseById = new Map(studentCourses.map((item) => [item.id, item]))
-    const result = new Map<string, Student[]>()
+    const result = new Map<string, CalendarParticipant[]>()
 
     enrollments
-      .filter((enrollment) => enrollment.status === 'active')
       .forEach((enrollment) => {
         const studentCourse = studentCourseById.get(enrollment.studentCourseId)
         const student = studentCourse
           ? studentById.get(studentCourse.studentId)
           : undefined
         if (!student) return
-        result.set(enrollment.classId, [...(result.get(enrollment.classId) ?? []), student])
+        result.set(enrollment.classId, [
+          ...(result.get(enrollment.classId) ?? []),
+          { enrollment, student },
+        ])
       })
 
     return result
   }, [enrollments, studentCourses, students])
 
   const events = useMemo(
-    () =>
-      classes.map((classItem) => {
+    () => {
+      const classEvents = classes.map((classItem) => {
         const courseName =
           courses.find((course) => course.id === classItem.courseId)?.name ??
           'Unknown course'
         return toEvent(
           classItem,
           courseName,
-          participantsByClass.get(classItem.id)?.length ?? 0
+          enrollmentParticipantsByClass.get(classItem.id) ?? []
         )
-      }),
-    [classes, courses, participantsByClass]
+      })
+      const studentById = new Map(students.map((student) => [student.id, student]))
+      const studentCourseById = new Map(studentCourses.map((item) => [item.id, item]))
+      const classById = new Map(classes.map((classItem) => [classItem.id, classItem]))
+      const absenceEvents = attendances.flatMap((attendance) => {
+        if (attendance.status !== 'absent') return []
+        const enrollment = enrollments.find((item) => item.id === attendance.enrollmentId)
+        const studentCourse = enrollment
+          ? studentCourseById.get(enrollment.studentCourseId)
+          : undefined
+        const student = studentCourse ? studentById.get(studentCourse.studentId) : undefined
+        const classItem = classById.get(attendance.classId)
+        return student && classItem ? [toAbsenceEvent(attendance, classItem, student)] : []
+      })
+      return [...classEvents, ...absenceEvents]
+    },
+    [attendances, classes, courses, enrollmentParticipantsByClass, enrollments, studentCourses, students]
   )
 
   const handleEventClick = (event: EventClickArg) => {
-    setSelectedClass(event.event.extendedProps.classItem as Class)
+    const classItem = event.event.extendedProps.classItem as Class | undefined
+    if (!classItem) return
+    setSelectedClass(classItem)
+    setSelectedDate(event.event.start)
   }
 
   const selectedStudents = selectedClass
-    ? participantsByClass.get(selectedClass.id) ?? []
+    ? getParticipantsOnDate(
+        enrollmentParticipantsByClass.get(selectedClass.id) ?? [],
+        selectedDate
+      )
+    : []
+
+  const selectedAbsentStudents = selectedClass && selectedDate
+    ? attendances
+        .filter((attendance) =>
+          attendance.status === 'absent' &&
+          attendance.classId === selectedClass.id &&
+          attendance.attendanceDate === getDateKey(selectedDate)
+        )
+        .map((attendance) => {
+          const enrollment = enrollments.find((item) => item.id === attendance.enrollmentId)
+          const studentCourse = studentCourses.find((item) => item.id === enrollment?.studentCourseId)
+          return students.find((student) => student.id === studentCourse?.studentId)
+        })
+        .filter((student): student is Student => Boolean(student))
     : []
 
   return (
@@ -138,7 +257,7 @@ export function CalendarPage() {
         <div className='flex flex-col gap-4'>
           <Card className='min-w-0'>
             <CardContent className='p-3 sm:p-5'>
-              {classesLoading || coursesLoading || studentsLoading || studentCoursesLoading || enrollmentsLoading ? (
+              {classesLoading || coursesLoading || studentsLoading || studentCoursesLoading || enrollmentsLoading || attendancesLoading ? (
                 <p className='py-12 text-center text-muted-foreground'>Loading schedule...</p>
               ) : (
                 <FullCalendar
@@ -204,6 +323,16 @@ export function CalendarPage() {
                           </ul>
                         ) : (
                           <p className='text-muted-foreground'>No active students</p>
+                        )}
+                        {selectedAbsentStudents.length > 0 && (
+                          <div className='mt-3'>
+                            <p className='font-medium text-red-700'>Absent students</p>
+                            <ul className='mt-1 list-inside list-disc text-red-700'>
+                              {selectedAbsentStudents.map((student) => (
+                                <li key={student.id}>{student.name}</li>
+                              ))}
+                            </ul>
+                          </div>
                         )}
                       </div>
                     </div>

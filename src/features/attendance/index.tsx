@@ -1,6 +1,7 @@
 import type { Attendance } from '@/types/mds'
 import { CrudResourcePage } from '@/components/crud-resource-page'
 import { useClassesQuery } from '@/features/classes/queries'
+import { useCoursesQuery } from '@/features/courses/queries'
 import { useEnrollmentsQuery } from '@/features/enrollments/queries'
 import { useStudentCoursesQuery } from '@/features/student-courses/queries'
 import { useStudentsQuery } from '@/features/students/queries'
@@ -22,7 +23,18 @@ export function AttendancePage() {
   const { data: studentCourses = [], isLoading: studentCoursesLoading } = useStudentCoursesQuery()
   const { data: students = [], isLoading: studentsLoading } = useStudentsQuery()
   const { data: classes = [], isLoading: classesLoading } = useClassesQuery()
+    const { data: courses = [], isLoading: coursesLoading } = useCoursesQuery()
   const mutations = useAttendanceMutations()
+
+  const courseNameById = new Map(courses.map((course) => [course.id, course.name]))
+
+  const isScheduledClassDate = (classItem: (typeof classes)[number], dateValue: string) => {
+    const [year, month, day] = dateValue.split('-').map(Number)
+    if (!year || !month || !day) return false
+    const sundayBasedDay = new Date(year, month - 1, day).getDay()
+    const mondayBasedDay = sundayBasedDay === 0 ? 7 : sundayBasedDay
+    return classItem.dayOfWeek === mondayBasedDay
+  }
 
   const rows = data.map((attendance) => {
     const enrollment = enrollments.find((item) => item.id === attendance.enrollmentId)
@@ -44,9 +56,40 @@ export function AttendancePage() {
       description='Record and review daily attendance for enrolled students.'
       resourceLabel='Attendance'
       showId={false}
-      fields={fields.map((field) => field.key === 'enrollmentId' ? { ...field, options: enrollments.map((item) => ({ value: item.id, label: `${rows.find((row) => row.id === item.id)?.enrollmentName ?? item.id}` })) } : field) as { key: string; label: string; type?: 'date'; readOnly?: boolean; options?: { value: string; label: string }[]; showInTable?: boolean }[]}
+      fields={fields.map((field) => field.key === 'enrollmentId' ? {
+        ...field,
+        options: (form: Record<string, unknown>) => {
+          const attendanceDate = String(form.attendanceDate ?? '')
+          return [{ value: '', label: 'Select an enrollment' }, ...enrollments
+            .filter((item) => {
+              if (item.status === 'cancelled') return false
+              if (!attendanceDate) return true
+              const classItem = classes.find((clazz) => clazz.id === item.classId)
+              return Boolean(
+                classItem &&
+                item.startedAt <= attendanceDate &&
+                (!item.endedAt || item.endedAt >= attendanceDate) &&
+                isScheduledClassDate(classItem, attendanceDate)
+              )
+            })]
+            .map((item) => {
+              const studentCourse = studentCourses.find((course) => course.id === item.studentCourseId)
+              const studentName = students.find((student) => student.id === studentCourse?.studentId)?.name ?? 'Unknown student'
+              const classItem = classes.find((clazz) => clazz.id === item.classId)
+              const courseName = classItem ? courseNameById.get(classItem.courseId) ?? 'Unknown course' : 'Unknown course'
+              const classLabel = classItem
+                ? `${classItem.className} (${classItem.startTime}-${classItem.endTime})`
+                : 'Unknown class'
+              return {
+                value: item.id,
+                label: `${studentName} - ${courseName} - ${classLabel}`,
+              }
+            })
+        },
+      } : field) as { key: string; label: string; type?: 'date'; readOnly?: boolean; resetKeys?: string[]; options?: { value: string; label: string }[] | ((form: Record<string, unknown>) => { value: string; label: string }[]); showInTable?: boolean }[]}
       rows={rows as unknown as (Record<string, unknown> & { id: string })[]}
       isLoading={isLoading || enrollmentsLoading || studentCoursesLoading || studentsLoading || classesLoading}
+        isLoading={isLoading || enrollmentsLoading || studentCoursesLoading || studentsLoading || classesLoading || coursesLoading}
       onCreate={(payload) => mutations.create.mutateAsync(payload as Omit<Attendance, 'id' | 'studentCourseId' | 'classId' | 'recordedAt'>)}
       onUpdate={(id, payload) => mutations.update.mutateAsync({ id, data: payload as Attendance })}
       onDelete={(id) => mutations.remove.mutateAsync(id)}

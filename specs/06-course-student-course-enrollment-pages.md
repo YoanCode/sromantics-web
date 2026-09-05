@@ -22,11 +22,11 @@
 
 ## StudentCourse page
 
-- 顯示學生 id、課程 id、目前 active class name、購買堂數、已使用堂數、剩餘堂數、付款狀態與課程狀態。
+- 顯示學生、課程、購買堂數、已使用堂數、剩餘堂數、付款狀態與課程狀態；不在 StudentCourse 頁面顯示單一班級。
 - 可建立、編輯與刪除學生課程額度。
 - API base path：`/api/student-courses`。
 - 堂數欄位必須使用非負整數。
-- `className` 是由 active `Enrollment.classId` 對應 `Class.className` 後的唯讀顯示欄位，不寫回 `StudentCourse`。
+- 班級不屬於 StudentCourse；學生可透過多筆 Enrollment 在同一 Course 的不同 Class 間轉班或使用額度。
 
 ## Class page
 
@@ -48,6 +48,11 @@
 - 顯示 Enrollment、學生、班級、日期、出席狀態與備註。
 - 支援 `present`、`absent`、`late`、`excused`。
 - 建立、修改或刪除出席紀錄時，由 API 同步更新 StudentCourse 堂數。
+- Attendance 新增、修改或刪除成功後，前端必須重新載入 Attendance 與 StudentCourse 資料，讓堂數立即反映最新結果。
+- Calendar 使用同一份 Attendance query cache，因此 Attendance 異動成功後，日曆中的缺席事件也必須同步更新。
+- Enrollment 下拉選項顯示學生名稱、課程名稱、班級名稱與上課時間，不直接顯示技術 ID。
+- 選擇出席日期後，Enrollment 下拉只顯示日期落在報名區間內、未取消且符合班級固定上課星期的報名紀錄。
+- 變更出席日期時，清除原本選取的 Enrollment，避免提交過期或不符合日期的報名紀錄。
 - 同一 Enrollment 同一天不可重複建立出席紀錄。
 - API base path：`/api/attendances`。
 
@@ -66,6 +71,9 @@
 - `StudentCourse.usedLessons` and `remainingLessons` are read-only in the form and are updated by attendance/business logic.
 - Derived display fields such as `className` are never included in create or update payloads.
 - Enrollment create/update requests contain only the current enrollment fields; legacy database compatibility fields are populated by the API.
+- Enrollment class options show course name, class name, weekday, and time, and must be filtered to classes belonging to the selected StudentCourse course.
+- Selecting a StudentCourse dynamically filters the Class options to the matching Course.
+- Changing StudentCourse clears the previously selected Class to prevent submitting a stale incompatible classId.
 - StudentCourse create forms must include `enrolledAt`; the API defaults it to the current date only as a defensive fallback.
 
 ## Relationship selectors
