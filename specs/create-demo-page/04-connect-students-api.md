@@ -4,6 +4,8 @@
 
 Replace the mock data in the Students page with live data from `sromantics-api`. Use **TanStack Query** for server state and **axios** for HTTP requests. All CRUD operations (add, edit, delete, bulk delete) must call the real API.
 
+The Students page also loads `/api/parents` and resolves `Student.parentId` to a read-only `parentName` display column. `parentName` must not be sent back in Student create or update payloads.
+
 ---
 
 ## 📁 Files to Create

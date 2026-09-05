@@ -10,6 +10,7 @@ import { StudentsPrimaryButtons } from './components/students-primary-buttons'
 import { StudentsProvider } from './components/students-provider'
 import { StudentsTable } from './components/students-table'
 import { useStudentsQuery } from './queries'
+import { useParentsQuery } from '@/features/parents/queries'
 
 const route = getRouteApi('/_authenticated/students/')
 
@@ -17,6 +18,13 @@ export function Students() {
   const search = route.useSearch()
   const navigate = route.useNavigate()
   const { data: students = [], isLoading } = useStudentsQuery()
+  const { data: parents = [], isLoading: parentsLoading } = useParentsQuery()
+  const rows = students.map((student) => ({
+    ...student,
+    parentName:
+      parents.find((parent) => parent.id === student.parentId)?.name ??
+      'Unknown parent',
+  }))
 
   return (
     <StudentsProvider>
@@ -37,11 +45,11 @@ export function Students() {
           </div>
           <StudentsPrimaryButtons />
         </div>
-        {isLoading ? (
+        {isLoading || parentsLoading ? (
           <p className='text-muted-foreground'>Loading...</p>
         ) : (
           <StudentsTable
-            data={students}
+            data={rows}
             search={search as Record<string, unknown>}
             navigate={navigate}
           />

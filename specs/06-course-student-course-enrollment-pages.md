@@ -21,10 +21,11 @@
 
 ## StudentCourse page
 
-- 顯示學生 id、課程 id、購買堂數、已使用堂數、剩餘堂數、付款狀態與課程狀態。
+- 顯示學生 id、課程 id、目前 active class name、購買堂數、已使用堂數、剩餘堂數、付款狀態與課程狀態。
 - 可建立、編輯與刪除學生課程額度。
 - API base path：`/api/student-courses`。
 - 堂數欄位必須使用非負整數。
+- `className` 是由 active `Enrollment.classId` 對應 `Class.className` 後的唯讀顯示欄位，不寫回 `StudentCourse`。
 
 ## Class page
 
@@ -35,10 +36,11 @@
 
 ## Enrollment page
 
-- 顯示 StudentCourse id、Class id、開始日期、結束日期與狀態。
+- 顯示 StudentCourse id、Class id、Class name、開始日期、結束日期與狀態。
 - 可建立、編輯與刪除班級加入紀錄。
 - API base path：`/api/enrollments`。
 - 支援將紀錄標記為 `transferred`，保留轉班歷史。
+- `className` 由 `classId` 對應 `Class.className` 後顯示，不寫回 `Enrollment`。
 
 ## Acceptance criteria
 

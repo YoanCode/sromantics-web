@@ -1,10 +1,12 @@
 import type { Enrollment } from '@/types/mds'
 import { CrudResourcePage } from '@/components/crud-resource-page'
+import { useClassesQuery } from '@/features/classes/queries'
 import { useEnrollmentMutations, useEnrollmentsQuery } from './queries'
 
 const fields = [
   { key: 'studentCourseId', label: 'Student Course ID' },
   { key: 'classId', label: 'Class ID' },
+  { key: 'className', label: 'Class Name', readOnly: true },
   { key: 'startedAt', label: 'Started At' },
   { key: 'endedAt', label: 'Ended At' },
   { key: 'status', label: 'Status' },
@@ -12,16 +14,23 @@ const fields = [
 
 export function Enrollments() {
   const { data = [], isLoading } = useEnrollmentsQuery()
+  const { data: classes = [], isLoading: classesLoading } = useClassesQuery()
   const mutations = useEnrollmentMutations()
+  const rows = data.map((enrollment) => ({
+    ...enrollment,
+    className:
+      classes.find((clazz) => clazz.id === enrollment.classId)?.className ??
+      'Unknown class',
+  }))
 
   return (
     <CrudResourcePage
       title='Enrollments'
       description='Manage current class memberships and transfer history.'
       resourceLabel='Enrollment'
-      fields={fields as { key: string; label: string }[]}
-      rows={data as unknown as (Record<string, unknown> & { id: string })[]}
-      isLoading={isLoading}
+      fields={fields as { key: string; label: string; readOnly?: boolean }[]}
+      rows={rows as unknown as (Record<string, unknown> & { id: string })[]}
+      isLoading={isLoading || classesLoading}
       onCreate={(payload) => mutations.create.mutateAsync(payload as Omit<Enrollment, 'id'>)}
       onUpdate={(id, payload) =>
         mutations.update.mutateAsync({ id, data: payload as Enrollment })

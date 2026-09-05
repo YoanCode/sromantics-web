@@ -43,6 +43,13 @@ export const studentsColumns: ColumnDef<Student>[] = [
     ),
   },
   {
+    accessorKey: 'parentName',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Parent Name' />
+    ),
+    cell: ({ row }) => <div>{row.getValue('parentName')}</div>,
+  },
+  {
     accessorKey: 'gender',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Gender' />

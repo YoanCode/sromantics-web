@@ -21,6 +21,7 @@ type Field = {
   key: string
   label: string
   type?: 'text' | 'number'
+  readOnly?: boolean
 }
 
 type ResourceRow = Record<string, unknown> & { id: string }
@@ -77,7 +78,7 @@ export function CrudResourcePage({
     setSaving(true)
     try {
       const payload = Object.fromEntries(
-        fields.map((field) => {
+        fields.filter((field) => !field.readOnly).map((field) => {
           const value = form[field.key]
           return [
             field.key,
@@ -180,7 +181,7 @@ export function CrudResourcePage({
             </DialogTitle>
           </DialogHeader>
           <div className='grid gap-4 py-4'>
-            {fields.map((field) => (
+            {fields.filter((field) => !field.readOnly).map((field) => (
               <div key={field.key} className='grid gap-2'>
                 <Label htmlFor={field.key}>{field.label}</Label>
                 <Input
