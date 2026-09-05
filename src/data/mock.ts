@@ -79,6 +79,18 @@ export const mockClasses: Class[] = [
     maxCapacity: 15,
     pricePerPeriod: 800,
   },
+  {
+    id: 'cl_003',
+    courseId: 'c_math',
+    className: '2026秋季 國二數學特訓B班',
+    teacherName: '李老師',
+    classroom: '202小教室',
+    dayOfWeek: 4,
+    startTime: '18:30',
+    endTime: '21:30',
+    maxCapacity: 20,
+    pricePerPeriod: 600,
+  },
 ]
 
 export const mockStudentCourses: StudentCourse[] = [
@@ -89,8 +101,8 @@ export const mockStudentCourses: StudentCourse[] = [
     enrolledAt: '2026-08-01',
     paymentStatus: 'paid',
     purchasedLessons: 20,
-    usedLessons: 0,
-    remainingLessons: 20,
+    usedLessons: 3,
+    remainingLessons: 17,
     status: 'active',
   },
   {
@@ -112,6 +124,14 @@ export const mockEnrollments: Enrollment[] = [
     studentCourseId: 'sc_001',
     classId: 'cl_001',
     startedAt: '2026-08-01',
+    endedAt: '2026-08-20',
+    status: 'transferred',
+  },
+  {
+    id: 'e_003',
+    studentCourseId: 'sc_001',
+    classId: 'cl_003',
+    startedAt: '2026-08-21',
     status: 'active',
   },
   {

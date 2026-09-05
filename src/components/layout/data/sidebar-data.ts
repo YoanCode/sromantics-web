@@ -23,6 +23,10 @@ import {
   GalleryVerticalEnd,
   GraduationCap,
   UserRound,
+  BookOpen,
+  ClipboardList,
+  CalendarCheck,
+  CalendarDays,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -89,6 +93,26 @@ export const sidebarData: SidebarData = {
           title: 'Parents',
           url: '/parents',
           icon: UserRound,
+        },
+        {
+          title: 'Courses',
+          url: '/courses',
+          icon: BookOpen,
+        },
+        {
+          title: 'Classes',
+          url: '/classes',
+          icon: CalendarDays,
+        },
+        {
+          title: 'Student Courses',
+          url: '/student-courses',
+          icon: ClipboardList,
+        },
+        {
+          title: 'Enrollments',
+          url: '/enrollments',
+          icon: CalendarCheck,
         },
         {
           title: 'Secured by Clerk',
