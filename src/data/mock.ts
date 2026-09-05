@@ -1,4 +1,11 @@
-import type { Parent, Student, Course, Class, Enrollment } from '@/types/mds'
+import type {
+  Parent,
+  Student,
+  Course,
+  Class,
+  StudentCourse,
+  Enrollment,
+} from '@/types/mds'
 
 export const mockParents: Parent[] = [
   {
@@ -74,21 +81,44 @@ export const mockClasses: Class[] = [
   },
 ]
 
+export const mockStudentCourses: StudentCourse[] = [
+  {
+    id: 'sc_001',
+    studentId: 's_001',
+    courseId: 'c_math',
+    enrolledAt: '2026-08-01',
+    paymentStatus: 'paid',
+    purchasedLessons: 20,
+    usedLessons: 0,
+    remainingLessons: 20,
+    status: 'active',
+  },
+  {
+    id: 'sc_002',
+    studentId: 's_002',
+    courseId: 'c_eng',
+    enrolledAt: '2026-08-05',
+    paymentStatus: 'partial',
+    purchasedLessons: 10,
+    usedLessons: 0,
+    remainingLessons: 10,
+    status: 'active',
+  },
+]
+
 export const mockEnrollments: Enrollment[] = [
   {
     id: 'e_001',
-    studentId: 's_001',
+    studentCourseId: 'sc_001',
     classId: 'cl_001',
-    enrolledAt: '2026-08-01',
-    paymentStatus: 'paid',
-    remainingLessons: 20,
+    startedAt: '2026-08-01',
+    status: 'active',
   },
   {
     id: 'e_002',
-    studentId: 's_002',
+    studentCourseId: 'sc_002',
     classId: 'cl_002',
-    enrolledAt: '2026-08-05',
-    paymentStatus: 'partial',
-    remainingLessons: 10,
+    startedAt: '2026-08-05',
+    status: 'active',
   },
 ]

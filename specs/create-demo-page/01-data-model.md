@@ -65,14 +65,28 @@ export const classSchema = z.object({
 });
 export type Class = z.infer<typeof classSchema>;
 
-// 5. Enrollment Schema & Type
-export const enrollmentSchema = z.object({
+// 5. Student course balance Schema & Type
+export const studentCourseSchema = z.object({
   id: z.string(),
   studentId: z.string(),
-  classId: z.string(),
+  courseId: z.string(),
   enrolledAt: z.string(),
   paymentStatus: z.enum(['paid', 'unpaid', 'partial']),
-  remainingLessons: z.number().min(0),
+  purchasedLessons: z.number().int().min(0),
+  usedLessons: z.number().int().min(0),
+  remainingLessons: z.number().int().min(0),
+  status: z.enum(['active', 'completed', 'cancelled']),
+});
+export type StudentCourse = z.infer<typeof studentCourseSchema>;
+
+// 6. Class membership history Schema & Type
+export const enrollmentSchema = z.object({
+  id: z.string(),
+  studentCourseId: z.string(),
+  classId: z.string(),
+  startedAt: z.string(),
+  endedAt: z.string().optional(),
+  status: z.enum(['active', 'transferred', 'completed', 'cancelled']),
 });
 export type Enrollment = z.infer<typeof enrollmentSchema>;
 ```
@@ -80,7 +94,7 @@ export type Enrollment = z.infer<typeof enrollmentSchema>;
 Create structured relational mock data referencing the types from src/types/mds.ts.
 
 ```TypeScript
-import type { Parent, Student, Course, Class, Enrollment } from '@/types/mds';
+import type { Parent, Student, Course, Class, StudentCourse, Enrollment } from '@/types/mds';
 
 export const mockParents: Parent[] = [
   {
@@ -156,22 +170,45 @@ export const mockClasses: Class[] = [
   },
 ];
 
+export const mockStudentCourses: StudentCourse[] = [
+  {
+    id: 'sc_001',
+    studentId: 's_001',
+    courseId: 'c_math',
+    enrolledAt: '2026-08-01',
+    paymentStatus: 'paid',
+    purchasedLessons: 20,
+    usedLessons: 0,
+    remainingLessons: 20,
+    status: 'active',
+  },
+  {
+    id: 'sc_002',
+    studentId: 's_002',
+    courseId: 'c_eng',
+    enrolledAt: '2026-08-05',
+    paymentStatus: 'partial',
+    purchasedLessons: 10,
+    usedLessons: 0,
+    remainingLessons: 10,
+    status: 'active',
+  },
+];
+
 export const mockEnrollments: Enrollment[] = [
   {
     id: 'e_001',
-    studentId: 's_001',
+    studentCourseId: 'sc_001',
     classId: 'cl_001',
-    enrolledAt: '2026-08-01',
-    paymentStatus: 'paid',
-    remainingLessons: 20,
+    startedAt: '2026-08-01',
+    status: 'active',
   },
   {
     id: 'e_002',
-    studentId: 's_002',
+    studentCourseId: 'sc_002',
     classId: 'cl_002',
-    enrolledAt: '2026-08-05',
-    paymentStatus: 'partial',
-    remainingLessons: 10,
+    startedAt: '2026-08-05',
+    status: 'active',
   },
 ];
 ```

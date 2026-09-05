@@ -49,13 +49,27 @@ export const classSchema = z.object({
 })
 export type Class = z.infer<typeof classSchema>
 
-// 5. Enrollment Schema & Type
-export const enrollmentSchema = z.object({
+// 5. Student course balance Schema & Type
+export const studentCourseSchema = z.object({
   id: z.string(),
   studentId: z.string(),
-  classId: z.string(),
+  courseId: z.string(),
   enrolledAt: z.string(),
   paymentStatus: z.enum(['paid', 'unpaid', 'partial']),
-  remainingLessons: z.number().min(0),
+  purchasedLessons: z.number().int().min(0),
+  usedLessons: z.number().int().min(0),
+  remainingLessons: z.number().int().min(0),
+  status: z.enum(['active', 'completed', 'cancelled']),
+})
+export type StudentCourse = z.infer<typeof studentCourseSchema>
+
+// 6. Class membership history Schema & Type
+export const enrollmentSchema = z.object({
+  id: z.string(),
+  studentCourseId: z.string(),
+  classId: z.string(),
+  startedAt: z.string(),
+  endedAt: z.string().optional(),
+  status: z.enum(['active', 'transferred', 'completed', 'cancelled']),
 })
 export type Enrollment = z.infer<typeof enrollmentSchema>
