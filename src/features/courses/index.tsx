@@ -4,7 +4,7 @@ import { useCoursesQuery, useCourseMutations } from './queries'
 
 const fields = [
   { key: 'name', label: 'Name' },
-  { key: 'category', label: 'Category' },
+  { key: 'category', label: 'Category', options: [{ value: 'math', label: 'Math' }, { value: 'english', label: 'English' }, { value: 'science', label: 'Science' }, { value: 'other', label: 'Other' }] },
   { key: 'description', label: 'Description' },
 ] as const
 
@@ -17,7 +17,8 @@ export function Courses() {
       title='Courses'
       description='Manage reusable course information.'
       resourceLabel='Course'
-      fields={fields as { key: string; label: string }[]}
+      showId={false}
+      fields={fields as { key: string; label: string; options?: { value: string; label: string }[] }[]}
       rows={data as unknown as (Record<string, unknown> & { id: string })[]}
       isLoading={isLoading}
       onCreate={(payload) => mutations.create.mutateAsync(payload as Omit<Course, 'id'>)}

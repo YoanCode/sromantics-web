@@ -27,6 +27,8 @@ import {
   ClipboardList,
   CalendarCheck,
   CalendarDays,
+  CalendarRange,
+  ClipboardCheck,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -67,22 +69,26 @@ export const sidebarData: SidebarData = {
           title: 'Tasks',
           url: '/tasks',
           icon: ListTodo,
+          hidden: true,
         },
         {
           title: 'Apps',
           url: '/apps',
           icon: Package,
+          hidden: true,
         },
         {
           title: 'Chats',
           url: '/chats',
           badge: '3',
           icon: MessagesSquare,
+          hidden: true,
         },
         {
           title: 'Users',
           url: '/users',
           icon: Users,
+          hidden: true,
         },
         {
           title: 'Students',
@@ -105,6 +111,11 @@ export const sidebarData: SidebarData = {
           icon: CalendarDays,
         },
         {
+          title: 'Calendar',
+          url: '/calendar',
+          icon: CalendarRange,
+        },
+        {
           title: 'Student Courses',
           url: '/student-courses',
           icon: ClipboardList,
@@ -115,8 +126,14 @@ export const sidebarData: SidebarData = {
           icon: CalendarCheck,
         },
         {
+          title: 'Attendance',
+          url: '/attendance',
+          icon: ClipboardCheck,
+        },
+        {
           title: 'Secured by Clerk',
           icon: ClerkLogo,
+          hidden: true,
           items: [
             {
               title: 'Sign In',
@@ -136,6 +153,7 @@ export const sidebarData: SidebarData = {
     },
     {
       title: 'Pages',
+      hidden: true,
       items: [
         {
           title: 'Auth',
@@ -234,6 +252,7 @@ export const sidebarData: SidebarData = {
           title: 'Help Center',
           url: '/help-center',
           icon: HelpCircle,
+          hidden: true,
         },
       ],
     },

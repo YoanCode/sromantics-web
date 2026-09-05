@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { SelectDropdown } from '@/components/select-dropdown'
+import { useParentsQuery } from '@/features/parents/queries'
 import { useStudents } from './students-provider'
 
 const formSchema = z.object({
@@ -52,6 +53,7 @@ export function StudentsActionDialog({
 }: StudentActionDialogProps) {
   const isEdit = !!currentRow
   const { onCreate, onUpdate } = useStudents()
+  const { data: parents = [] } = useParentsQuery()
   const form = useForm<StudentForm>({
     resolver: zodResolver(formSchema),
     defaultValues: isEdit
@@ -107,9 +109,17 @@ export function StudentsActionDialog({
               name='parentId'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Parent ID</FormLabel>
+                  <FormLabel>Parent</FormLabel>
                   <FormControl>
-                    <Input placeholder='Enter parent ID' {...field} />
+                    <SelectDropdown
+                      defaultValue={field.value}
+                      onValueChange={field.onChange}
+                      items={parents.map((parent) => ({
+                        label: `${parent.name} (${parent.phone})`,
+                        value: parent.id,
+                      }))}
+                      placeholder='Select parent'
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

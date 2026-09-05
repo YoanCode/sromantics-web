@@ -73,3 +73,16 @@ export const enrollmentSchema = z.object({
   status: z.enum(['active', 'transferred', 'completed', 'cancelled']),
 })
 export type Enrollment = z.infer<typeof enrollmentSchema>
+
+// 7. Attendance Schema & Type
+export const attendanceSchema = z.object({
+  id: z.string(),
+  enrollmentId: z.string(),
+  studentCourseId: z.string(),
+  classId: z.string(),
+  attendanceDate: z.string(),
+  status: z.enum(['present', 'absent', 'late', 'excused']),
+  note: z.string().optional(),
+  recordedAt: z.string().optional(),
+})
+export type Attendance = z.infer<typeof attendanceSchema>

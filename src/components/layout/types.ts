@@ -16,6 +16,7 @@ type BaseNavItem = {
   title: string
   badge?: string
   icon?: React.ElementType
+  hidden?: boolean
 }
 
 type NavLink = BaseNavItem & {
@@ -33,6 +34,7 @@ type NavItem = NavCollapsible | NavLink
 type NavGroup = {
   title: string
   items: NavItem[]
+  hidden?: boolean
 }
 
 type SidebarData = {

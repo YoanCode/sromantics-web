@@ -20,8 +20,12 @@ import { Label } from '@/components/ui/label'
 type Field = {
   key: string
   label: string
-  type?: 'text' | 'number'
+  type?: 'text' | 'number' | 'date' | 'time'
   readOnly?: boolean
+  showInTable?: boolean
+  disabled?: boolean
+  options?: { value: string; label: string }[]
+  defaultValue?: string | number
 }
 
 type ResourceRow = Record<string, unknown> & { id: string }
@@ -36,11 +40,15 @@ type CrudResourcePageProps = {
   onCreate: (data: Record<string, unknown>) => Promise<unknown>
   onUpdate: (id: string, data: Record<string, unknown>) => Promise<unknown>
   onDelete: (id: string) => Promise<unknown>
+  showId?: boolean
 }
 
 function toFormData(row: ResourceRow | undefined, fields: Field[]) {
   return Object.fromEntries(
-    fields.map((field) => [field.key, row?.[field.key] ?? ''])
+    fields.map((field) => [
+      field.key,
+      row?.[field.key] ?? field.defaultValue ?? (field.options?.[0]?.value ?? ''),
+    ])
   )
 }
 
@@ -54,6 +62,7 @@ export function CrudResourcePage({
   onCreate,
   onUpdate,
   onDelete,
+  showId = true,
 }: CrudResourcePageProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingRow, setEditingRow] = useState<ResourceRow>()
@@ -120,8 +129,8 @@ export function CrudResourcePage({
             <table className='w-full text-sm'>
               <thead className='bg-muted/50 text-left'>
                 <tr>
-                  <th className='px-4 py-3'>ID</th>
-                  {fields.map((field) => (
+                  {showId && <th className='px-4 py-3'>ID</th>}
+                  {fields.filter((field) => field.showInTable !== false).map((field) => (
                     <th key={field.key} className='px-4 py-3'>
                       {field.label}
                     </th>
@@ -132,8 +141,8 @@ export function CrudResourcePage({
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id} className='border-t'>
-                    <td className='px-4 py-3 font-mono text-xs'>{row.id}</td>
-                    {fields.map((field) => (
+                    {showId && <td className='px-4 py-3 font-mono text-xs'>{row.id}</td>}
+                    {fields.filter((field) => field.showInTable !== false).map((field) => (
                       <td key={field.key} className='px-4 py-3'>
                         {String(row[field.key] ?? '')}
                       </td>
@@ -157,7 +166,7 @@ export function CrudResourcePage({
                 {rows.length === 0 && (
                   <tr>
                     <td
-                      colSpan={fields.length + 2}
+                      colSpan={fields.filter((field) => field.showInTable !== false).length + (showId ? 2 : 1)}
                       className='px-4 py-8 text-center text-muted-foreground'
                     >
                       No records found.
@@ -184,17 +193,33 @@ export function CrudResourcePage({
             {fields.filter((field) => !field.readOnly).map((field) => (
               <div key={field.key} className='grid gap-2'>
                 <Label htmlFor={field.key}>{field.label}</Label>
-                <Input
-                  id={field.key}
-                  type={field.type ?? 'text'}
-                  value={String(form[field.key] ?? '')}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      [field.key]: event.target.value,
-                    }))
-                  }
-                />
+                {field.options ? (
+                  <select
+                    id={field.key}
+                    className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
+                    value={String(form[field.key] ?? '')}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, [field.key]: event.target.value }))
+                    }
+                  >
+                    {field.options.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input
+                    id={field.key}
+                    type={field.type ?? 'text'}
+                    min={field.type === 'number' ? 0 : undefined}
+                    disabled={field.disabled}
+                    value={String(form[field.key] ?? '')}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, [field.key]: event.target.value }))
+                    }
+                  />
+                )}
               </div>
             ))}
           </div>

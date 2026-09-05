@@ -10,6 +10,7 @@
 - `/classes`
 - `/student-courses`
 - `/enrollments`
+- `/attendance`
 
 三個 route 都必須受到 authenticated route guard 保護，並出現在 sidebar。
 
@@ -42,13 +43,40 @@
 - 支援將紀錄標記為 `transferred`，保留轉班歷史。
 - `className` 由 `classId` 對應 `Class.className` 後顯示，不寫回 `Enrollment`。
 
+## Attendance page
+
+- 顯示 Enrollment、學生、班級、日期、出席狀態與備註。
+- 支援 `present`、`absent`、`late`、`excused`。
+- 建立、修改或刪除出席紀錄時，由 API 同步更新 StudentCourse 堂數。
+- 同一 Enrollment 同一天不可重複建立出席紀錄。
+- API base path：`/api/attendances`。
+
 ## Acceptance criteria
 
-- 三個頁面可從 sidebar 開啟。
+- 管理頁面可從 sidebar 開啟。
 - 頁面載入時從對應 API 取得資料。
 - 建立、編輯、刪除成功後會重新載入列表並顯示成功提示。
 - API 失敗時不會靜默吞錯誤。
 - TypeScript typecheck 通過。
+
+## Form validation rules
+
+- Enum fields such as payment status, course status, enrollment status, and attendance status use constrained select options, not free-text inputs.
+- Numeric lesson fields accept non-negative numbers only.
+- `StudentCourse.usedLessons` and `remainingLessons` are read-only in the form and are updated by attendance/business logic.
+- Derived display fields such as `className` are never included in create or update payloads.
+- Enrollment create/update requests contain only the current enrollment fields; legacy database compatibility fields are populated by the API.
+- StudentCourse create forms must include `enrolledAt`; the API defaults it to the current date only as a defensive fallback.
+
+## Relationship selectors
+
+- Student `parentId` uses a parent-name selector.
+- Class `courseId` uses a course-name selector.
+- StudentCourse `studentId` uses a student-name selector and `courseId` uses a course-name selector.
+- Enrollment `studentCourseId` and `classId` use loaded relationship selectors.
+- Attendance `enrollmentId` uses a loaded enrollment selector.
+- Date fields use date controls and weekday fields use bounded options instead of free text.
+- Management tables hide technical IDs and display human-readable names; IDs remain internal values in API payloads.
 
 ## Mock data scenario
 
